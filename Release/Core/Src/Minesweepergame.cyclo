@@ -1,0 +1,8 @@
+../Core/Src/Minesweepergame.c:155:9:win	8
+../Core/Src/Minesweepergame.c:208:6:reveale_void_field	7
+../Core/Src/Minesweepergame.c:262:9:reveale_cell_env	8
+../Core/Src/Minesweepergame.c:302:9:ismember_	3
+../Core/Src/Minesweepergame.c:312:6:MS_print	16
+../Core/Src/Minesweepergame.c:283:6:MS_game_over	5
+../Core/Src/Minesweepergame.c:369:6:MS_init	14
+../Core/Src/Minesweepergame.c:75:5:Minesweepergame	21
