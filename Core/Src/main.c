@@ -150,16 +150,167 @@ int main(void)
   MX_TIM15_Init();
   /* USER CODE BEGIN 2 */
 
+  init();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+	btn=0;
+	while(1)
+	{
+		delete_disp_mat();
+		switch(main_page)//print all content
+		{
+			//főképernyő
+			case 1: write_main_page_data();
+				  break;
+			//másodlagos képernyő: köridők, entergomb megnyomására kiszámolja a legutolsó megnyomás óta eltelt időt, megtett távolságot... és a legújabb kerül felülre, kiírja a körök számát
+			case 2: write_secondary_page_data();
+				  break;
+			//menü
+			case 3: write_text_V(9, 70, "Settings", Pixel_on, size_5x8);
+				  break;
+			//"kikapcsolás"
+			case 4: write_text_V(9, 70, "PWR DOWN", Pixel_on, size_5x8);
+				  break;
+		}
+		print_disp_mat();
+		//LL_TIM_EnableIT_CC2(TIM21);
+		btn = 0;
+
+		while(btn == 0x00)//amíg nem nyomok semmit itt ciklik
+		{
+			NVIC_DisableIRQ(SysTick_IRQn);
+			HAL_PWR_EnterSLEEPMode(PWR_LOWPOWERREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+			NVIC_EnableIRQ(SysTick_IRQn);
+			asm("nop");
+		}
+
+		//LL_TIM_DisableIT_CC2(TIM21);
+
+		if(btn == jobbgomb)
+		{
+			btn=0;
+			main_page++;
+			if(main_page > main_page_db)	{ main_page=1;} else{}
+		}	else{}
+		if(btn == balgomb )
+		{
+			btn=0;
+			main_page--;
+			if(main_page < 1)	{ main_page = main_page_db;} else{}
+		}	else{}
+		if(btn == exitgomb )
+		{
+			switch(main_page)
+			{
+				case 1: if((system_bits & moving_time_recording_EN_2) == 0) //főképrenyőnél exit gombot 1 másodpercig nyomvatartva reseteli az adatokat
+						{
+							for( uint8_t d = 0; ; d++)
+							{
+								if(d>=10)
+								{
+									alldata.dist=0;
+									alldata.elapsed_time=0;
+									alldata.maxspeed=0;
+									alldata.moving_time=0;
+
+									ltmp.elapsed_time=0;//azért van itt mert ha csak a főképernyő adatokat resetelném és hozzáadnék (legelőször) egy lapot(megnyomnám az entergombot a másodlagos képernyőn)
+									ltmp.dist=0;		//akkor azokat az adatokat rakná bele amit a főképernyőnél már kitöröltem (persze más változókban vannak de ugyan azok az adatok lennének)
+									ltmp.maxspeed=0;	//
+								}else{}
+								tim_delay_ms(100);
+								if(btn != exitgomb)	{ break;} else{}
+							}
+						}	else{};
+						break;
+
+				case 2: for( uint8_t d = 0; ; d++)//reseteli a köröket ha 1 másodpercnél hosszabb ideig nyomom
+						{
+							if(d==10)
+							{
+								ltmp.laps=0;
+								ltmp.elapsed_time=0;
+								ltmp.dist=0;
+								ltmp.maxspeed=0;
+								l1.dist = 0;
+								l1.max_speed = 0;
+								l1.avg_speed = 0;
+								l1.hours = 0;
+								l1.mins = 0;
+								l1.secs = 0;
+								copy_lap(&l2, &l1);
+								copy_lap(&l3, &l1);
+								break;
+							} else{}
+							tim_delay_ms(100);
+							if(btn != exitgomb)	{ break;} else{}
+						}
+						break;
+			}
+
+		}	else{}
+		if(btn == entergomb )
+		{
+			switch(main_page)
+			{
+				case 1: //főképernyő
+						if(system_bits & moving_time_recording_EN_1)	{ system_bits &= ~(moving_time_recording_EN_1 | moving_time_recording_EN_2);}// a főképernyőnél a középső gomb megnyomásával le lehet állí­tani, és el lehet indí­tani a mérést
+						else
+						{
+							system_bits |= moving_time_recording_EN_1;
+							if(alldata.speed > 0.5)
+							{
+								system_bits |= moving_time_recording_EN_2;
+							}
+							else
+							{
+								system_bits &= ~moving_time_recording_EN_2;
+							}
+						}
+						break;
+				case 2: //másodlagos képernyő// laps
+						copy_lap(&l3, &l2);
+						copy_lap(&l2, &l1);
+						get_elapsed_time(ltmp.elapsed_time, &l1.hours, &l1.mins, &l1.secs);
+						l1.dist = (ltmp.dist * curr_tyre)/1000;//km
+						l1.max_speed = ltmp.maxspeed;
+						l1.avg_speed = get_avg_speed(ltmp.dist, ltmp.elapsed_time);
+						ltmp.elapsed_time=0;
+						ltmp.dist=0;
+						ltmp.maxspeed=0;
+						ltmp.laps++;//számolja a megtett köröket
+						break;
+				case 3: //beállítások menü
+						settings();
+						break;
+				case 4: for( uint8_t d = 0; ; d++)//csak akkor megy standby módba ha 1 másodpercnél tovább nyomom a gombot
+						{
+							if(d==10)
+							{
+								tim_delay_ms(150);//késleltetés hogy az utolsó kirajzolt csíkrészlet is látható legyen
+								pwr_down();
+							} else{}
+							draw_line_x(1, 1+((d+1)*6), 60, Pixel_on);//futó csík
+							tim_delay_ms(100);
+							print_disp_mat();
+							if(btn != entergomb)
+							{
+								draw_line_x(1, 1+((d+1)*6), 60, Pixel_off);//töröljük a csíkot
+								break;
+							} else{}
+						}
+						break;
+			}
+		  btn=0;
+		} else{}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
   }
+
+	while(1)	{ __NOP();}
   /* USER CODE END 3 */
 }
 
@@ -853,7 +1004,233 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 
+//////////////functions////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/*
+ * @note Calibration should be performed before starting A/D conversion.
+ * If it is performed after the ADC init it will mess up (sifts by one) the channel order for the DMA
+ */
+static void Calibrate_ADC(void)
+{
+	uint8_t atmpf = 0;
+	LL_ADC_StartCalibration(ADC1);
+	while( (ADC1->CR & ADC_CR_ADCAL) == ADC_CR_ADCAL )//Wait for calibration completion
+	{
+		if(atmpf==0xff)	{ Error_Handler(); break;}	else{}
+		atmpf++;
+	}
+	LL_ADC_ClearFlag_EOCAL(ADC1);
+}
+
+static void copy_lap(lap* l_dest, lap* l_source)
+{
+	l_dest->hours = l_source->hours;
+	l_dest->mins = l_source->mins;
+	l_dest->secs = l_source->secs;
+	l_dest->dist = l_source->dist;
+	l_dest->avg_speed = l_source->avg_speed;
+	l_dest->max_speed = l_source->max_speed;
+}
+
+/*
+ * note: standby mód, wakeup source: wakeup pin2 (pc13)
+ */
+static void pwr_down(void)
+{
+	if(system_bits & moving_time_recording_EN_1)	{ system_bits &= ~(moving_time_recording_EN_1 | moving_time_recording_EN_2);}	else{}//mérés leállí­tása, ha nem lett volna leállí­tva
+
+	//save total distance in EEPROM
+	uint32_t tmpd = alldata.totdist;
+	Write_M95010_W_EEPROM(EE_totdist_0, (uint8_t)( tmpd & 0x000000ff) );
+	Write_M95010_W_EEPROM(EE_totdist_1, (uint8_t)((tmpd & 0x0000ff00)>>8) );
+	Write_M95010_W_EEPROM(EE_totdist_2, (uint8_t)((tmpd & 0x00ff0000)>>16) );
+	Write_M95010_W_EEPROM(EE_totdist_3, (uint8_t)((tmpd & 0xff000000)>>24) );
+
+	LL_mDelay(200);//várunk hogy a gomb esetleges pergése, vagy rosszkori elengedése miatt megjövő interrupt ne rontsa el a sleepet
+
+	LL_TIM_CC_DisableChannel(TIM2, LL_TIM_CHANNEL_CH1);
+	LL_TIM_CC_DisableChannel(TIM2, LL_TIM_CHANNEL_CH2);
+	LL_TIM_CC_DisableChannel(TIM2, LL_TIM_CHANNEL_CH3);
+	NVIC_DisableIRQ(RTC_Alarm_IRQn);//not to trigger interrupt after sending to sleep the LCD
+	LL_RTC_DisableWriteProtection(RTC);
+	LL_RTC_ALMA_Disable(RTC);//ne keltse fel az rtc
+	LL_RTC_EnableWriteProtection(RTC);
+
+	LCD_sleep();
+
+	__disable_irq();
+	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts
+	EXTI->PR2 = 0x00000078;//clear pending interrupts
+	LL_GPIO_ResetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
+	set_GPIOs_to_analog_mode();
+	__enable_irq();
+
+	HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);
+	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts							//	    ________  	//
+	EXTI->PR2 = 0x00000078;//clear pending interrupts							//     /  zzzz  \	//
+	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);//clear wake up flag						//     | zzzzzz |	//
+	HAL_PWR_EnterSTANDBYMode();//after wake from standby, jumps to reset vector	//    <_________/	//
+}
+
+static void write_secondary_page_data(void)
+{
+	write_character_V(22, 121, ':', Pixel_on, size_5x8);
+	write_character_V(40, 121, ':', Pixel_on, size_5x8);
+	write_dec_num_time_format_V(8, 121, l1.hours, Pixel_on, size_5x8, ALIGN_LEFT);
+	write_dec_num_time_format_V(26, 121, l1.mins, Pixel_on, size_5x8, ALIGN_LEFT);
+	write_dec_num_time_format_V(44, 121, l1.secs, Pixel_on, size_5x8, ALIGN_LEFT);
+	write_text_V(0, 112,"d",Pixel_on,size_5x8);
+	write_text_V(54, 112,"km",Pixel_on,size_5x8);
+	write_dec_num_float_V(40, 112, l1.dist, 2, Pixel_on, size_5x8);
+	write_text_V(2, 103,"vavg",Pixel_on,size_5x8);
+	write_text_V(2, 94,"vmax",Pixel_on,size_5x8);
+	write_dec_num_float_V(50, 103, l1.avg_speed, 1, Pixel_on, size_5x8);
+	write_dec_num_float_V(50, 94, l1.max_speed, 1, Pixel_on, size_5x8);
+	draw_line_x(0, 67, 91, Pixel_on);
+	//
+	write_character_V(22, 82, ':', Pixel_on, size_5x8);
+	write_character_V(40, 82, ':', Pixel_on, size_5x8);
+	write_dec_num_time_format_V(8, 82, l2.hours, Pixel_on, size_5x8, ALIGN_LEFT);
+	write_dec_num_time_format_V(26, 82, l2.mins, Pixel_on, size_5x8, ALIGN_LEFT);
+	write_dec_num_time_format_V(44, 82, l2.secs, Pixel_on, size_5x8, ALIGN_LEFT);
+	write_text_V(0, 73,"d",Pixel_on,size_5x8);
+	write_text_V(54, 73,"km",Pixel_on,size_5x8);
+	write_dec_num_float_V(40, 73, l2.dist, 2, Pixel_on, size_5x8);
+	write_text_V(2, 64,"vavg",Pixel_on,size_5x8);
+	write_text_V(2, 55,"vmax",Pixel_on,size_5x8);
+	write_dec_num_float_V(50, 64, l2.avg_speed, 1, Pixel_on, size_5x8);
+	write_dec_num_float_V(50, 55, l2.max_speed, 1, Pixel_on, size_5x8);
+	draw_line_x(0, 63, 52, Pixel_on);
+	//
+	write_character_V(22, 43, ':', Pixel_on, size_5x8);
+	write_character_V(40, 43, ':', Pixel_on, size_5x8);
+	write_dec_num_time_format_V(8, 43, l3.hours, Pixel_on, size_5x8, ALIGN_LEFT);
+	write_dec_num_time_format_V(26, 43, l3.mins, Pixel_on, size_5x8, ALIGN_LEFT);
+	write_dec_num_time_format_V(44, 43, l3.secs, Pixel_on, size_5x8, ALIGN_LEFT);
+	write_text_V(0, 34,"d",Pixel_on,size_5x8);
+	write_text_V(54, 34,"km",Pixel_on,size_5x8);
+	write_dec_num_float_V(40, 34, l3.dist, 2, Pixel_on, size_5x8);
+	write_text_V(2, 25,"vavg",Pixel_on,size_5x8);
+	write_text_V(2, 16,"vmax",Pixel_on,size_5x8);
+	write_dec_num_float_V(50, 25, l3.avg_speed, 1, Pixel_on, size_5x8);
+	write_dec_num_float_V(50, 16, l3.max_speed, 1, Pixel_on, size_5x8);
+	draw_line_x(0, 63, 13, Pixel_on);
+	//
+	write_text_V(2, 0, "laps:", Pixel_on, size_5x8);
+	write_dec_num_uint8_t_V(60, 0, ltmp.laps, Pixel_on, size_5x8, ALIGN_RIGHT);
+}
+
+void write_main_page_data(void)
+{
+	write_character_V(22, 121, ':', Pixel_on, size_5x8);
+	write_character_V(40, 121, ':', Pixel_on, size_5x8);
+	draw_line_x(0, 63, 117, Pixel_on);
+	draw_line_x(0, 63, 115, Pixel_on);
+	write_text_V(54, 104,"km",Pixel_on,size_5x8);
+	draw_line_x(54, 63, 101, Pixel_on);
+	write_text_V(57, 93,"h",Pixel_on,size_5x8);
+	write_text_V(2, 83,"max",Pixel_on,size_5x8);
+	write_text_V(2, 73,"avg",Pixel_on,size_5x8);
+	draw_line_x(0, 63, 70, Pixel_on);
+	write_text_V(9, 61,"rpm",Pixel_on,size_5x8);
+	draw_line_y(47, 69, 35,Pixel_on);
+	setpixel(47, 66, Pixel_on);		  //ramp icon
+	draw_line_x(46, 47, 65, Pixel_on);//
+	draw_line_x(45, 47, 64, Pixel_on);//
+	draw_line_x(44, 47, 63, Pixel_on);//
+	draw_line_x(43, 47, 62, Pixel_on);//
+	draw_line_x(42, 47, 61, Pixel_on);//
+	write_text_V(54, 61,"%",Pixel_on,size_5x8);
+	draw_line_x(0, 63, 46, Pixel_on);
+	write_text_V(12, 38,"km",Pixel_on,size_5x8);
+	draw_line_y(26, 45, 35, Pixel_on);
+	setpixel(47, 43, Pixel_on);//° character
+	setpixel(48, 44, Pixel_on);//
+	setpixel(48, 42, Pixel_on);//
+	setpixel(49, 43, Pixel_on);//
+	write_character_V(50, 37, 'C', Pixel_on, size_5x8);
+	draw_line_x(0, 63, 25, Pixel_on);
+	draw_line_x(0, 63, 11, Pixel_on);
+	write_character_V(0, 14, 'e', Pixel_on, size_5x8);
+	write_character_V(0, 0, 'm', Pixel_on, size_5x8);
+
+	get_rtc_data();
+	write_dec_num_time_format_V(8, 121, RTCtime.Hours, Pixel_on, size_5x8, ALIGN_LEFT);
+	write_dec_num_time_format_V(26, 121, RTCtime.Minutes, Pixel_on, size_5x8, ALIGN_LEFT);
+	write_dec_num_time_format_V(44, 121, RTCtime.Seconds, Pixel_on, size_5x8, ALIGN_LEFT);
+
+	draw_battery_band(alldata.batt);
+	write_dec_num_float_V(35, 93, alldata.speed, 1, Pixel_on, size_10x16);
+	write_dec_num_float_V(44, 83, alldata.maxspeed, 2, Pixel_on, size_5x8);
+	write_dec_num_float_V(44, 73, get_avg_speed(alldata.dist, alldata.moving_time), 2, Pixel_on, size_5x8);
+	write_dec_num_float_V(23, 50, alldata.cadence, 1, Pixel_on, size_5x8);
+	write_dec_num_float_V(55, 50, alldata.grad, 1, Pixel_on, size_5x8);
+	write_dec_num_float_V(19, 28, (alldata.dist*curr_tyre)/1000, 2, Pixel_on, size_5x8);//km a mértékegység
+	write_dec_num_float_V(52, 28, alldata.acc_tempsensor, 1 , Pixel_on, size_5x8);
+	write_elapsed_time();
+
+	if(system_bits & moving_time_recording_EN_1)	{ write_character_V(58, 14, '>', Pixel_on, size_5x8);}
+	else{ fill_rectangle_xy_height_width(58, 14, 7, 5, Pixel_off);}
+
+}
+
+void write_elapsed_time(void)
+{
+	uint8_t th,tm,ts;
+	get_elapsed_time(alldata.elapsed_time, &th, &tm, &ts);
+	write_character_V(22, 14, ':', Pixel_on, size_5x8);
+	write_character_V(40, 14, ':', Pixel_on, size_5x8);
+	write_dec_num_time_format_V(8, 14, th, Pixel_on, size_5x8, ALIGN_LEFT);
+	write_dec_num_time_format_V(26, 14, tm, Pixel_on, size_5x8, ALIGN_LEFT);
+	write_dec_num_time_format_V(44, 14, ts, Pixel_on, size_5x8, ALIGN_LEFT);
+
+	get_elapsed_time(alldata.moving_time, &th, &tm, &ts);
+	write_character_V(22, 0, ':', Pixel_on, size_5x8);
+	write_character_V(40, 0, ':', Pixel_on, size_5x8);
+	write_dec_num_time_format_V(8, 0, th, Pixel_on, size_5x8, ALIGN_LEFT);
+	write_dec_num_time_format_V(26, 0, tm, Pixel_on, size_5x8, ALIGN_LEFT);
+	write_dec_num_time_format_V(44, 0, ts, Pixel_on, size_5x8, ALIGN_LEFT);
+}
+
+void get_elapsed_time(uint32_t et_sec, uint8_t* hf, uint8_t* mf, uint8_t* sf)
+{
+	*hf = ( (uint8_t)(et_sec/3600) );
+	et_sec = (et_sec-((*hf)*3600));
+	*mf = ( (uint8_t)(et_sec/60) );
+	*sf = ( (uint8_t)(et_sec-((*mf)*60)));
+}
+
+float get_avg_speed(uint32_t distf, uint32_t secf)
+{
+	float vavg=(curr_tyre*distf);
+	vavg /= secf;  // m/s
+	vavg *= 3.6; // km/h
+	if( (vavg<200) && (vavg>=0) )	{ return vavg;}
+	else{ return 0;}
+}
+
+void write_rtc_data(void)
+{
+	LL_RTC_DisableWriteProtection(RTC);
+	LL_RTC_EnableInitMode(RTC);
+	tim_delay_ms(2);
+	LL_RTC_TIME_Config(RTC, LL_RTC_TIME_FORMAT_AM_OR_24, __LL_RTC_CONVERT_BIN2BCD(RTCtime.Hours), __LL_RTC_CONVERT_BIN2BCD(RTCtime.Minutes), __LL_RTC_CONVERT_BIN2BCD(RTCtime.Seconds));//HAL_RTC_SetTime(&hrtc, &RTCtime, RTC_FORMAT_BIN);
+	LL_RTC_DATE_Config(RTC, __LL_RTC_CONVERT_BIN2BCD(RTCdate.WeekDay), __LL_RTC_CONVERT_BIN2BCD(RTCdate.Day), __LL_RTC_CONVERT_BIN2BCD(RTCdate.Month), __LL_RTC_CONVERT_BIN2BCD(RTCdate.Year));//HAL_RTC_SetDate(&hrtc, &RTCdate, RTC_FORMAT_BIN);
+	LL_RTC_DisableInitMode(RTC);
+	tim_delay_ms(2);
+	LL_RTC_EnableWriteProtection(RTC);
+}
+
+void get_rtc_data(void)
+{
+	RTCtime.Hours = __LL_RTC_CONVERT_BCD2BIN(LL_RTC_TIME_GetHour(RTC));
+	RTCtime.Minutes = __LL_RTC_CONVERT_BCD2BIN(LL_RTC_TIME_GetMinute(RTC));
+	RTCtime.Seconds = __LL_RTC_CONVERT_BCD2BIN(LL_RTC_TIME_GetSecond(RTC));
+	RTCdate.Year = __LL_RTC_CONVERT_BCD2BIN(LL_RTC_DATE_GetYear(RTC));
+	RTCdate.Day = __LL_RTC_CONVERT_BCD2BIN(LL_RTC_DATE_GetDay(RTC));
+	RTCdate.Month = __LL_RTC_CONVERT_BCD2BIN(LL_RTC_DATE_GetMonth(RTC));
+	RTCdate.WeekDay = __LL_RTC_CONVERT_BCD2BIN(LL_RTC_DATE_GetWeekDay(RTC));
+}
 
 static void _err_hnd_st_msg(char* str1, char*str2)
 {
@@ -865,6 +1242,44 @@ static void _err_hnd_st_msg(char* str1, char*str2)
 	while(!btn)	{ asm("nop");}
 }
 
+uint32_t get_dist_for_new_tyre(float old_tyre, float new_tyre, uint32_t current_dist_val)
+{
+	return  ((uint32_t) round((((float)current_dist_val*old_tyre)/new_tyre)) );
+}
+
+/*
+ * @note: bits are write protected, before calling this function use LL_RTC_DisableWriteProtection(RTC)
+ */
+void SetSmoothCalib(int16_t calv)
+{
+	uint16_t atmp=0;
+	while((RTC->ISR & RTC_ISR_RECALPF) == RTC_ISR_RECALPF) //Wait until it's allow to modify calibartion register
+	{
+		if(atmp == 0xffff)	{ return;} else{}//timeout
+		asm("nop");
+		atmp++;
+	}
+	//clear prev cal period value; 32sec period val is 0 so don't have to set new, clr old calib val
+	RTC->CALR &= (uint32_t)~((uint32_t)RTC_CALR_CALW8 | (uint32_t)RTC_CALR_CALW16 | (uint32_t)RTC_CALR_CALM_Msk | (uint32_t)RTC_CALR_CALP_Msk);
+	while((RTC->ISR & RTC_ISR_RECALPF) == RTC_ISR_RECALPF) //Wait until it's allow to modify calibartion register
+	{
+		if(atmp == 0xffff)	{ return;} else{}//timeout
+		asm("nop");
+		atmp++;
+	}
+	if(calv != 0)
+	{
+		if(calv < 0)
+		{
+			calv = abs(calv);
+			RTC->CALR |= (((uint32_t)calv)&RTC_CALR_CALM_Msk);//mask out pulses  //bits 8:0 are used
+		}
+		else
+		{	//ha pl +1-et akarok beállítani, CALP bittel hozzáadok 512-t aztán CALM bitekkel elveszek 511-et
+			RTC->CALR |= (uint32_t) ( (uint32_t)RTC_CALR_CALP |  (512-(((uint32_t)calv)&RTC_CALR_CALM_Msk)) );//insert 512 pulse and decrease the amount of added pulses with CALM bits
+		}
+	}else{ return;}
+}
 
 /**
   * Care should be taken where you use this delay!!!!!!!!
@@ -888,18 +1303,48 @@ void tim_delay_ms(uint16_t d)
 
 	while(tim_delay_ms_flag == 0)//wait for the interrupt
 	{
-		__NOP();
+		asm("nop");
 	}
 	tim_delay_ms_flag = 0;
 
 	LL_TIM_DisableCounter(TIM6);
 }
 
+void calculate_batt_voltage(uint16_t baterry_ADC_data, uint16_t vrefint_ADC_data)
+{
+	// VCHANNELx = (3 V × VREFINT_CAL × ADC_DATAx) / (VREFINT_DATA × FULL_SCALE)
+
+	float batt_volt = 0;
+
+	batt_volt = (float)(*(VREFINT_CAL_ADDR) * (VREFINT_CAL_VREF/1000) * baterry_ADC_data);
+	batt_volt /= (float)(vrefint_ADC_data * 4095);//
+	alldata.batt = (batt_volt * batt_input_volt_div_ratio);
+}
+
+void draw_battery_band(float volt_val)
+{
+	if(volt_val > min_batt)
+	{
+		if(volt_val < max_batt)
+		{
+			uint8_t line = 0;
+			line = ((pixels_x-1) * ( (volt_val - min_batt) / (max_batt - min_batt) ) );
+			if(saved_bits & LCD_inverted)	{ draw_line_x(line, 63, 116, Pixel_on);}
+			else{ { draw_line_x(0, line, 116, Pixel_on);}}
+		}
+		else
+		{
+			if(saved_bits & LCD_inverted)	{ draw_line_x(0, 63, 116, Pixel_off);}
+			else{ { draw_line_x(0, 63, 116, Pixel_on);}}
+		}
+	}else{/*line width would be zero, so we don't have to do anything*/}
+}
+
 ////init functions///////////////////////////////////////////////////////////////////////////////
 static void init(void)
 {
 
-
+	//TODO put debloated inits here
 
 
 
@@ -959,17 +1404,16 @@ static void init(void)
 
 	LL_RCC_EnableRTC();//Peripheral clock enable
 	if(PWR->SR1 & PWR_SR1_SBF)	{ PWR->SR1 &= ~PWR_SR1_SBF;}	//ha a SBF flag aktív akkor standby módban volt, nem kell az RTC init, mert stanby módban az RTC regiszter értékek megmaradnak, ha nem aktív akkor kell az init mert power on reset volt -
-	else{ RTC_init();}										// - így elkerülhető az rtc init miatti kb 1 sec késés keletkezése wakeup-kor
+	//TODO else{ RTC_init();}										// - így elkerülhető az rtc init miatti kb 1 sec késés keletkezése wakeup-kor
 	LL_RTC_DisableWriteProtection(RTC);
 	LL_RTC_ALMA_Disable(RTC);
 	LL_RTC_ALMA_SetMask(RTC, LL_RTC_ALMA_MASK_ALL);
 	LL_RTC_ALMA_SetSubSecondMask(RTC, RTC_ALRMASSR_MASKSS_Msk);
-	EXTI->IMR |= LL_EXTI_LINE_17; //enable exti 17 int
-	EXTI->RTSR |= LL_EXTI_LINE_17; //rising edge
+	EXTI->IMR1 |= LL_EXTI_LINE_18; //enable exti 18 int
+	EXTI->RTSR1 |= LL_EXTI_LINE_18; //rising edge
 	LL_RTC_EnableIT_ALRA(RTC);
 	LL_RTC_ALMA_Enable(RTC);
-	LL_RTC_EnableOutRemap(RTC);//for calib output on PB14
-	SetSmoothCalib( (int16_t)( (int16_t)Read_AT25080_EEPROM(EE_RTC_smcalL) | ((int16_t)Read_AT25080_EEPROM(EE_RTC_smcalH) << 8) ) );// best value on BK2.2 is 29 //kell ide mert tápfesz elvesztése esetén nem jegyzi meg az értéket
+	SetSmoothCalib( (int16_t)( (int16_t)Read_M95010_W_EEPROM(EE_RTC_smcalL) | ((int16_t)Read_M95010_W_EEPROM(EE_RTC_smcalH) << 8) ) );// best value on BK2.2 is 29 //kell ide mert tápfesz elvesztése esetén nem jegyzi meg az értéket
 	//LL_RTC_CAL_SetOutputFreq(RTC, LL_RTC_CALIB_OUTPUT_1HZ); //nem kell az init, a settings-ben lehet módosí­tani, de mivel nincs elmentve sehova se, ezért kikapcsolás után egyik se lesz beállítva, szóval ha mérni kell akkor be kell állítania menüben
 	LL_RTC_EnableWriteProtection(RTC);
 

@@ -41,7 +41,34 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
+
+extern volatile uint8_t btn;
+
+extern bkdata alldata;//főképernyő adatok
+extern lap_tmp ltmp;
+
+extern volatile int8_t main_page;
+
+extern volatile uint8_t system_bits;
+
+
 extern uint8_t tim_delay_ms_flag;
+
+extern volatile float curr_tyre;//kerület m-ben
+extern capturedata cpt1;
+extern capturedata cpt2;
+
+extern volatile uint16_t adc_conv_results[used_ADC_channels];// 0-ch1-battery, 1-ch9-lightsensor, 2-ch17-vrefint //this is the destination of the DMA1
+
+extern volatile int32_t avgtemp;
+volatile int32_t avgtemp_samplenum = 0;
+extern volatile uint8_t temp_presc;
+
+extern volatile uint8_t Tgame_status;
+
+volatile float prev_v = 0, curr_v = 0;//previous and current velocity in m/s
+
+volatile uint8_t flashlight_toggle_cnt = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -204,7 +231,17 @@ void SysTick_Handler(void)
 void DMA1_Channel1_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
+	if(LL_DMA_IsActiveFlag_TC1(DMA1))
+	{
+		LL_DMA_ClearFlag_TC1(DMA1);
 
+		alldata.rawbatt = adc_conv_results[0];
+		alldata.rawlight = adc_conv_results[1];
+		alldata.rawvrefint = adc_conv_results[2];
+		alldata.rawtempsensor = adc_conv_results[3];
+
+		calculate_batt_voltage(adc_conv_results[0], adc_conv_results[2]);
+	}
   /* USER CODE END DMA1_Channel1_IRQn 0 */
   /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
 
@@ -223,17 +260,26 @@ void EXTI9_5_IRQHandler(void)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_8);
     /* USER CODE BEGIN LL_EXTI_LINE_8 */
-
+    if(LL_GPIO_IsInputPinSet(BTN_BAL_GPIO_Port, BTN_BAL_Pin))		{ btn |= balgomb;}
+    else{ btn &= ~balgomb;}
     /* USER CODE END LL_EXTI_LINE_8 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_9) != RESET)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_9);
     /* USER CODE BEGIN LL_EXTI_LINE_9 */
-
+    if(LL_GPIO_IsInputPinSet(BTN_ENTER_SYS_WKUP2_GPIO_Port, BTN_EXIT_Pin))		{ btn |= exitgomb;}
+    else{ btn &= ~exitgomb;}
     /* USER CODE END LL_EXTI_LINE_9 */
   }
   /* USER CODE BEGIN EXTI9_5_IRQn 1 */
+
+#ifndef DEBUG
+  if(Tgame_status==2 && btn)//in Tgame
+  {
+	Tgame_button_isr();
+  } else{}
+#endif
 
   /* USER CODE END EXTI9_5_IRQn 1 */
 }
@@ -245,8 +291,158 @@ void TIM2_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM2_IRQn 0 */
 
+	//speed interrupt variables////////////////////////////////////////////////
+	volatile uint32_t ti1 = 0; //number of osc periods between 2 captures
+	volatile float captureinterval;//time between 2 captures [s]
+	volatile float v1 = 0; //tmp velocity variable
+	///////////////////////////////////////////////////////////////////////////
+	//cadence interrupt variables//////////////////////////////////////////////
+	volatile float t2;
+	volatile uint32_t ti2=0;
+	///////////////////////////////////////////////////////////////////////////
+
+
+	//speed interrupt/////////////////////////////////////////////////////////////////////
+	//measures every period beetween interrupts
+	if(TIM2->SR & LL_TIM_SR_CC1IF)
+	{
+		TIM2->SR &= ~LL_TIM_SR_CC1IF;//clear isr flag
+		TIM2->SR &= ~LL_TIM_SR_CC1OF;////clear overcaptureflag
+
+		#ifdef DEBUG
+		LL_GPIO_TogglePin(D_LED_GPIO_Port, D_LED_Pin);
+		#endif
+
+		if(system_bits & moving_time_recording_EN_1)
+		{
+			alldata.dist++;
+			alldata.totdist++;
+			ltmp.dist++;
+		}
+
+		switch(cpt1.cptnum)
+		{
+			case 0:	cpt1.c1 = LL_TIM_IC_GetCaptureCH1(TIM2);
+					cpt1.cptnum=1;
+					cpt1.datastate |= 0x01;
+
+					if( (cpt1.datastate & (c1Valid|c2Valid)) == (c1Valid|c2Valid) )
+					{
+						if(cpt1.ovfbtwcpt == 0)
+						{
+							ti1=( cpt1.c1 - cpt1.c2 );
+						}
+						else
+						{
+							ti1=( cpt1.c1 + (65535-cpt1.c2) );//16 bit timer //only 1 overflow occured
+							if(cpt1.ovfbtwcpt > 1)
+							{
+								cpt1.ovfbtwcpt--;//one whole timer period was already added before this if
+								ti1=( ti1+(cpt1.ovfbtwcpt*65535) );
+							}else{}
+						}
+					}else{}
+					break;
+
+			case 1:	cpt1.c2 = LL_TIM_IC_GetCaptureCH1(TIM2);
+					cpt1.cptnum = 0;
+					cpt1.datastate |= 0x02;
+
+					if( (cpt1.datastate & (c1Valid|c2Valid)) == (c1Valid|c2Valid) )
+					{
+						if(cpt1.ovfbtwcpt == 0)
+						{
+							ti1=( cpt1.c2 - cpt1.c1 );
+						}
+						else
+						{
+							ti1=( cpt1.c2 + (65535-cpt1.c1) );//16 bit timer //only 1 overflow occured
+							if(cpt1.ovfbtwcpt > 1)
+							{
+								cpt1.ovfbtwcpt--;//one whole timer period was already added before this if
+								ti1=( ti1+(cpt1.ovfbtwcpt*65535) );
+							}else{}
+						}
+					}else{}
+					break;
+
+			default:	break;
+		}
+
+		if( (cpt1.datastate & (c1Valid|c2Valid)) == (c1Valid|c2Valid) )
+		{
+			cpt1.ovfbtwcpt=0;
+			captureinterval = ( (float)(ti1*(float)timtick) );
+			v1=(float)((curr_tyre/captureinterval));//  v=s/t	// m/s
+			v1=(float)(v1*3.6);//m/s -> km/h
+			if(v1<(alldata.speed+50))//ha egy fordulaton belül túlságosan megnő a sebesség akkor ott pergett a reed cső és a kondi nem szűrte ki(ha v1 < előző+50)
+			{
+				alldata.speed=v1;
+			}
+			if(alldata.maxspeed < alldata.speed)	{ alldata.maxspeed=alldata.speed;}	else{}
+			if(ltmp.maxspeed < alldata.speed)	{ ltmp.maxspeed=alldata.speed;}	else{}
+		}else{}
+
+	}else{}
+
+	//cadence interrupt/////////////////////////////////////////////////////////////////////
+	//only measures every second period between interrupts
+	if(TIM2->SR & LL_TIM_SR_CC2IF)
+	{
+		TIM2->SR &= ~LL_TIM_SR_CC2IF;//clear isr flag
+		TIM2->SR &= ~LL_TIM_SR_CC2OF;////clear overcaptureflag
+		if(cpt2.cptnum==1)
+		{
+			cpt2.c2 = LL_TIM_IC_GetCaptureCH2(TIM2);
+			cpt2.cptnum=0;
+
+			if(cpt2.ovfbtwcpt == 0)
+			{
+				ti2=( cpt2.c2 - cpt2.c1 );
+			}
+			else
+			{
+				ti2=( cpt2.c2 + (65535-cpt2.c1) );
+				if(cpt2.ovfbtwcpt > 1)
+				{
+					cpt2.ovfbtwcpt--;
+					ti2=( ti2+(cpt2.ovfbtwcpt*65535) );
+				}else{}
+			}
+			t2=( (float)(ti2*(float)timtick) );
+			alldata.cadence=(float)(60/t2);// ((1/t)*60)
+		}
+		else
+		{
+			cpt2.ovfbtwcpt=0;
+			cpt2.c1 = LL_TIM_IC_GetCaptureCH2(TIM2);
+			cpt2.cptnum=1;
+		}
+	}else{}
   /* USER CODE END TIM2_IRQn 0 */
   /* USER CODE BEGIN TIM2_IRQn 1 */
+
+	//timer overflow///////////////////////////////////////////////////////////////////////
+	if(TIM2->SR &= LL_TIM_SR_CC3IF)
+	{
+		TIM2->SR &= ~LL_TIM_SR_CC3IF;//clear isr flag
+		cpt1.ovfbtwcpt++;
+		cpt2.ovfbtwcpt++;
+
+		if(cpt1.ovfbtwcpt > max_ovf_num)
+		{
+			cpt1.cptnum = 0;
+			alldata.speed = 0;
+			cpt1.datastate = 0;
+		}else{}
+
+		if(cpt2.ovfbtwcpt > max_ovf_num)
+		{
+			cpt2.cptnum = 0;
+			alldata.cadence = 0;
+			cpt2.datastate = 0;
+		}else{}
+	}else{}
 
   /* USER CODE END TIM2_IRQn 1 */
 }
@@ -263,14 +459,16 @@ void EXTI15_10_IRQHandler(void)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_12);
     /* USER CODE BEGIN LL_EXTI_LINE_12 */
-
+    if(LL_GPIO_IsInputPinSet(BTN_JOBB_GPIO_Port, BTN_JOBB_Pin))		{ btn |= jobbgomb;}
+    else{ btn &= ~jobbgomb;}
     /* USER CODE END LL_EXTI_LINE_12 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_13) != RESET)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_13);
     /* USER CODE BEGIN LL_EXTI_LINE_13 */
-
+    if(LL_GPIO_IsInputPinSet(BTN_ENTER_SYS_WKUP2_GPIO_Port, BTN_ENTER_SYS_WKUP2_Pin))		{ btn |= entergomb;}
+    else{ btn &= ~entergomb;}
     /* USER CODE END LL_EXTI_LINE_13 */
   }
   /* USER CODE BEGIN EXTI15_10_IRQn 1 */
@@ -284,7 +482,31 @@ void EXTI15_10_IRQHandler(void)
 void RTC_Alarm_IRQHandler(void)
 {
   /* USER CODE BEGIN RTC_Alarm_IRQn 0 */
+	if(LL_RTC_IsActiveFlag_ALRA(RTC))
+	{
+		LL_RTC_ClearFlag_ALRA(RTC);
+		LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_17);
 
+		if((alldata.speed > 0.5) && (system_bits & moving_time_recording_EN_1))	{ system_bits |= moving_time_recording_EN_2;}	else{ system_bits &= ~moving_time_recording_EN_2;}
+		if(system_bits & moving_time_recording_EN_1)
+		{
+			alldata.elapsed_time++;
+			ltmp.elapsed_time++;
+			if(system_bits & moving_time_recording_EN_2)
+			{
+				alldata.moving_time++;
+			}else{}
+		}
+
+		if(main_page==1)
+		{
+			delete_disp_mat();
+			write_main_page_data();
+			print_disp_mat();
+		}else{}
+
+		LL_ADC_REG_StartConversion(ADC1);
+	}else{}
   /* USER CODE END RTC_Alarm_IRQn 0 */
   /* USER CODE BEGIN RTC_Alarm_IRQn 1 */
 
