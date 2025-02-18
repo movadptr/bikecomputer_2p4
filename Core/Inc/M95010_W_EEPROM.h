@@ -19,12 +19,12 @@
 #include "main.h"
 
 //commands
-#define WREN 	0b00000110	//Write Enable
-#define WRDI  	0b00000100	//Write Disable
-#define RDSR  	0b00000101	//Read Status Register
-#define WRSR  	0b00000001	//Write Status Register
-#define READ  	0b00000011	//Read from Memory Array
-#define WRITE  	0b00000010	//Write to Memory Array
+#define WRSR  	0x01	//Write Status Register
+#define WRITE  	0x02	//Write to Memory Array
+#define READ  	0x03	//Read from Memory Array
+#define WRDI  	0x04	//Write Disable
+#define RDSR  	0x05	//Read Status Register
+#define WREN 	0x06	//Write Enable
 
 //status register bits
 #define WIP		0
@@ -32,8 +32,8 @@
 #define BP0		2
 #define BP1		3
 
-uint8_t Read_M95010_W_EEPROM(uint16_t addr);
-void Write_M95010_W_EEPROM(uint16_t addr, uint8_t data);
+uint8_t Read_M95010_W_EEPROM(uint8_t addr);
+void Write_M95010_W_EEPROM(uint8_t addr, uint8_t data);
 uint8_t Read_SREG_M95010_W_EEPROM(void);
 void Write_SREG_M95010_W_EEPROM(uint8_t data);
 

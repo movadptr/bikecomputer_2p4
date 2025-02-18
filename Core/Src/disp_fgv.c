@@ -1038,7 +1038,7 @@ void draw_line_x(uint8_t x1, uint8_t x2,uint8_t y, uint8_t pixel_status)
 
 void setpixel(uint8_t x, uint8_t y, uint8_t Pixel_status)
 {
-	if(((x>=0)&&(x<pixels_x))&&((y>=0)&&(y<pixels_y)))
+	if((/*(x>=0)&&*/(x<pixels_x))&&(/*(y>=0)&&*/(y<pixels_y)))
 	{
 		uint8_t page=0,dotinpage=0;
 		page=x/8;

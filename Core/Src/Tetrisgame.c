@@ -50,6 +50,10 @@ unsigned char *startposaddrs[7]={0};
 
 extern volatile uint8_t btn;
 
+extern void (*GameMainIsrPntr)();
+extern void (*GameBtnIsrPntr)();
+extern volatile uint16_t game_main_isr_presc_cmp_val;
+
 #ifndef constant
 #ifdef _AVR_IO_H_
 #include <avr/pgmspace.h>
@@ -84,10 +88,11 @@ constant uint8_t bmp_tetr[434]={67,48,0xFF,0xC0,0xC0,0xC0,0xF8,0x18,0x18,0x18,0x
 
 int tetrisgame(void)//////////////////////
 {
+	btn=0;
 	delete_disp_mat();
 	print_bmp_V(8, 97, bmp_tetr, Pixel_on, Merge);
 	print_disp_mat();
-	LL_mDelay(1000);
+	LL_mDelay(600);
 
 	unsigned char LLpos[9]	=	{(_TETR_blocks_x/2)-1, _TETR_blocks_y-3, (_TETR_blocks_x/2), _TETR_blocks_y-3, (_TETR_blocks_x/2), _TETR_blocks_y-2, (_TETR_blocks_x/2), _TETR_blocks_y-1, 1};
 	unsigned char LLstartpos[9]={(_TETR_blocks_x/2)-1, _TETR_blocks_y-3, (_TETR_blocks_x/2), _TETR_blocks_y-3, (_TETR_blocks_x/2), _TETR_blocks_y-2, (_TETR_blocks_x/2), _TETR_blocks_y-1, 1};
@@ -138,11 +143,16 @@ int tetrisgame(void)//////////////////////
 	draw_rectangle_x1y1_x2y2(0, 0, 47, 127, Pixel_on);//keret
 	write_dec_num_int16_t_V(63, 121, score, Pixel_on, size_5x8, ALIGN_RIGHT);
 	print_disp_mat();
+
+	game_main_isr_presc_cmp_val = 5;//TODO choose difficulty by selecting speed
+	GameMainIsrPntr = Tgame_main_isr;
+	GameBtnIsrPntr = Tgame_button_isr;
+
 	Tgame_status=2;
 	while(1)
 	{
 		if(Tgame_status==1)	{LL_mDelay(4000); Tgame_status=0; break;}	else{}
-		asm("nop");
+		__NOP();
 	}
 	return 0;
 }
@@ -209,7 +219,7 @@ void Tgame_main_isr(void)//a meghívást timer megszakításba rakni
 		} else{}
 	}
 	uint8_t y=0, x=0, ytemp=0;
-	for(y = _TETR_blocks_y-1; (y>=0)&&(y <= _TETR_blocks_y-1); y--)
+	for(y = (_TETR_blocks_y-1); /*(y>=0)&&*/(y <= (_TETR_blocks_y-1)); y--)
 	{
 		for(x=0; x<_TETR_blocks_x; x++)//sor ellenőrzése hogy megtelt-e
 		{
@@ -297,6 +307,9 @@ void draw_next_item(void)
 void Tgame_over(void)
 {
 	Tgame_status=1;
+	game_main_isr_presc_cmp_val = 0;
+	GameMainIsrPntr = NULL;
+	GameBtnIsrPntr = NULL;
 	fill_rectangle_x1y1_x2y2(11, 54, 36, 72, Pixel_off);
 	write_text_V(12, 65, "GAME", Pixel_on, size_5x8);
 	write_text_V(12, 55, "OVER", Pixel_on, size_5x8);
@@ -408,7 +421,7 @@ unsigned char *movright(unsigned char **envmx2f, unsigned char *item_posf)
 			if( envmx2f [item_posf[tindex]+1] [item_posf[tindex+1]] == 2)	{ return item_posf;}//akkor nem lehet jobbra vinni, lerakott elem van mellette
 			else{}
 		}
-		for(tindex=7; (tindex<=7)&&(tindex>=0); tindex-=2 )
+		for(tindex=7; tindex<=7; tindex-=2 )
 		{
 			envmx2f [item_posf[tindex-1]+1] [item_posf[tindex]] = 1; //x+1 - edik és y - odik = 1
 			envmx2f [item_posf[tindex-1]] [item_posf[tindex]] = 0;	//x -edik és y -odik =0

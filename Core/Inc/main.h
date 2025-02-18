@@ -90,8 +90,8 @@ typedef struct
 {
 	volatile uint8_t cptnum;	//number of the captured edge
 	volatile uint8_t ovfbtwcpt;	//number of timer overflows between 2 captures
-	volatile uint16_t c1;		//first captured data
-	volatile uint16_t c2;		//second captured data
+	volatile uint32_t c1;		//first captured data
+	volatile uint32_t c2;		//second captured data
 	volatile uint8_t datastate;//tells if the data in the c1 and c2 are valid or not: if first bit is 1 then c1 is valid, if second bit is 1 then c2 is valid
 }capturedata;
 #define max_ovf_num	1//max overflows before resetting the capture variables, (this means stopping meas and setting velocity zero)
@@ -108,7 +108,7 @@ typedef struct
 /* USER CODE BEGIN EM */
 
 #define STM32_bikecomputer_2
-#define	swvstr	"swBK2.4V1.0."
+#define	swvstr	"BK2.4V1.0."
 #ifdef DEBUG
 #define swtyp "D"
 #else
@@ -121,7 +121,7 @@ typedef struct
 #define ADD_Minesweepergame			1
 #define ADD_tetrisgame				1
 #define ADD_trexgame				0
-#define ADD_GAMES	(ADD_Conway_s_game_of_life || ADD_Minesweepergame || ADD_tetrisgame || ADD_trexgame)
+#define ADD_GAMES	(ADD_Conway_s_game_of_life + ADD_Minesweepergame + ADD_tetrisgame + ADD_trexgame)
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
@@ -140,7 +140,12 @@ void get_elapsed_time(uint32_t et_sec, uint8_t* hf, uint8_t* mf, uint8_t* sf);
 void write_elapsed_time(void);
 void calculate_batt_voltage(uint16_t baterry_ADC_data, uint16_t vrefint_ADC_data);
 void draw_battery_band(float volt_val);
-
+void _err_hnd_st_msg(char* str1, char* str2);
+void pwr_down(void);
+void copy_lap(lap* l_dest, lap* l_source);
+void Calibrate_ADC(void);
+void write_secondary_page_data(void);
+float calcSTM32temp(uint16_t rawtemp);
 
 void Conway_s_game_of_life();
 int Minesweepergame();
@@ -171,18 +176,18 @@ void Tgame_main_isr();
 #define EEPROM_CS_GPIO_Port GPIOB
 #define FLASHLIGHT_Pin LL_GPIO_PIN_11
 #define FLASHLIGHT_GPIO_Port GPIOB
-#define BTN_JOBB_Pin LL_GPIO_PIN_12
-#define BTN_JOBB_GPIO_Port GPIOB
-#define BTN_JOBB_EXTI_IRQn EXTI15_10_IRQn
-#define BTN_ENTER_SYS_WKUP2_Pin LL_GPIO_PIN_13
-#define BTN_ENTER_SYS_WKUP2_GPIO_Port GPIOB
-#define BTN_ENTER_SYS_WKUP2_EXTI_IRQn EXTI15_10_IRQn
-#define BTN_EXIT_Pin LL_GPIO_PIN_8
-#define BTN_EXIT_GPIO_Port GPIOA
-#define BTN_EXIT_EXTI_IRQn EXTI9_5_IRQn
-#define BTN_BAL_Pin LL_GPIO_PIN_9
-#define BTN_BAL_GPIO_Port GPIOA
-#define BTN_BAL_EXTI_IRQn EXTI9_5_IRQn
+#define BTN_EXIT_Pin LL_GPIO_PIN_12
+#define BTN_EXIT_GPIO_Port GPIOB
+#define BTN_EXIT_EXTI_IRQn EXTI15_10_IRQn
+#define BTN_BAL_SYS_WKUP2_Pin LL_GPIO_PIN_13
+#define BTN_BAL_SYS_WKUP2_GPIO_Port GPIOB
+#define BTN_BAL_SYS_WKUP2_EXTI_IRQn EXTI15_10_IRQn
+#define BTN_JOBB_Pin LL_GPIO_PIN_8
+#define BTN_JOBB_GPIO_Port GPIOA
+#define BTN_JOBB_EXTI_IRQn EXTI9_5_IRQn
+#define BTN_ENTER_Pin LL_GPIO_PIN_9
+#define BTN_ENTER_GPIO_Port GPIOA
+#define BTN_ENTER_EXTI_IRQn EXTI9_5_IRQn
 #define SPEED_SW_Pin LL_GPIO_PIN_15
 #define SPEED_SW_GPIO_Port GPIOA
 #define CADENCE_SW_Pin LL_GPIO_PIN_3
@@ -208,34 +213,34 @@ void Tgame_main_isr();
 
 #define tyre_id_custom_perimeter	0x05U
 
-#define timtick			30.5e-6F	// 24Mhz/előosztó
-
+#define timtick			25e-9F	// 24Mhz/előosztó
+#define timAR			80000000UL//a timer counter hossza
 #define temperature_calib_val	0.0F//-1.0F
 
 
 ///////EEPROM addresses/////////////////////////////////
-#define EE_PWM_duty_backlight		1U
-#define EE_bitek					2U
-#define EE_curr_tyre_id				3U
-#define EE_totdist_0				4U//uint32_t
-#define EE_totdist_1				5U//
-#define EE_totdist_2				6U//
-#define EE_totdist_3				7U//
+#define EE_PWM_duty_backlight		0x0001
+#define EE_bitek					0x0002
+#define EE_curr_tyre_id				0x0003
+#define EE_totdist_0				0x0004//uint32_t
+#define EE_totdist_1				0x0005//
+#define EE_totdist_2				0x0006//
+#define EE_totdist_3				0x0007//
+/* OFFSETS ARE MANAGED BY ST DRIVER
+#define EE_offsetXL					0x0008//int16_t
+#define EE_offsetXH					0x0009//
+#define EE_offsetYL					0x000A
+#define EE_offsetYH					0x000B
+#define EE_offsetZL					0x000C
+#define EE_offsetZH					0x000D
+*/
+#define EE_custom_tyre_perimeter_H	0x000E
+#define EE_custom_tyre_perimeter_L	0x000F
 
-#define EE_offsetXL					8U//int16_t
-#define EE_offsetXH					9U//
-#define EE_offsetYL					10U
-#define EE_offsetYH					11U
-#define EE_offsetZL					12U
-#define EE_offsetZH					13U
+#define EE_RTC_smcalL				0x0011//int16_t
+#define EE_RTC_smcalH				0x0012//
 
-#define EE_custom_tyre_perimeter_H	14U
-#define EE_custom_tyre_perimeter_L	15U
-
-#define EE_RTC_smcalL				16U//int16_t
-#define EE_RTC_smcalH				17U//
-
-#define EE_contrast					18U
+#define EE_contrast					0x0013
 ////////////////////////////////////////////////////////
 
 //bit masks for saved bits
@@ -243,10 +248,10 @@ void Tgame_main_isr();
 #define LCD_inverted				0x02U
 
 ///////ADC stuff////////////////////////////////////////
-#define batt_input_volt_div_ratio	1.32794f
+#define batt_input_volt_div_ratio	1.303586319f// (R2+R1)/R2
+#define used_ADC_channels			4U
 #define max_batt					4.2f
 #define	min_batt					3.69f
-#define used_ADC_channels			4U
 ////////////////////////////////////////////////////////
 
 ///////bit masks for system_bits////////////////////////

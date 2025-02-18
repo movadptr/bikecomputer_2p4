@@ -22,6 +22,8 @@
 #include "stm32l4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "ST7565_64x128_LCD.h"
+#include "disp_fgv.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -69,6 +71,11 @@ extern volatile uint8_t Tgame_status;
 volatile float prev_v = 0, curr_v = 0;//previous and current velocity in m/s
 
 volatile uint8_t flashlight_toggle_cnt = 0;
+
+void (*GameMainIsrPntr)() = NULL;
+void (*GameBtnIsrPntr)() = NULL;
+volatile uint16_t game_main_isr_presc = 0;
+volatile uint16_t game_main_isr_presc_cmp_val = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -233,7 +240,9 @@ void DMA1_Channel1_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
 	if(LL_DMA_IsActiveFlag_TC1(DMA1))
 	{
-		LL_DMA_ClearFlag_TC1(DMA1);
+		//LL_DMA_ClearFlag_TC1(DMA1);
+		//LL_DMA_ClearFlag_HT1(DMA1);
+		LL_DMA_ClearFlag_GI1(DMA1);
 
 		alldata.rawbatt = adc_conv_results[0];
 		alldata.rawlight = adc_conv_results[1];
@@ -241,11 +250,44 @@ void DMA1_Channel1_IRQHandler(void)
 		alldata.rawtempsensor = adc_conv_results[3];
 
 		calculate_batt_voltage(adc_conv_results[0], adc_conv_results[2]);
+
+		LL_GPIO_TogglePin(D_LED_GPIO_Port, D_LED_Pin);
+	}
+
+	if(LL_ADC_IsActiveFlag_EOS(ADC1))
+	{
+		LL_ADC_ClearFlag_EOS(ADC1);
+	}
+
+	if(LL_DMA_IsActiveFlag_TE1(DMA1))
+	{
+		LL_DMA_ClearFlag_TE1(DMA1);
 	}
   /* USER CODE END DMA1_Channel1_IRQn 0 */
   /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
 
   /* USER CODE END DMA1_Channel1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles ADC1 and ADC2 interrupts.
+  */
+void ADC1_2_IRQHandler(void)
+{
+  /* USER CODE BEGIN ADC1_2_IRQn 0 */
+	if(LL_ADC_IsActiveFlag_EOS(ADC1) != 0)
+	{
+		LL_ADC_ClearFlag_EOS(ADC1);
+	}
+
+	if(LL_ADC_IsActiveFlag_OVR(ADC1) != 0)
+	{
+		LL_ADC_ClearFlag_OVR(ADC1);
+	}
+  /* USER CODE END ADC1_2_IRQn 0 */
+  /* USER CODE BEGIN ADC1_2_IRQn 1 */
+
+  /* USER CODE END ADC1_2_IRQn 1 */
 }
 
 /**
@@ -260,28 +302,55 @@ void EXTI9_5_IRQHandler(void)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_8);
     /* USER CODE BEGIN LL_EXTI_LINE_8 */
-    if(LL_GPIO_IsInputPinSet(BTN_BAL_GPIO_Port, BTN_BAL_Pin))		{ btn |= balgomb;}
-    else{ btn &= ~balgomb;}
+    if(LL_GPIO_IsInputPinSet(BTN_JOBB_GPIO_Port, BTN_JOBB_Pin))		{ btn |= jobbgomb;}
+    else{ btn &= ~jobbgomb;}
     /* USER CODE END LL_EXTI_LINE_8 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_9) != RESET)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_9);
     /* USER CODE BEGIN LL_EXTI_LINE_9 */
-    if(LL_GPIO_IsInputPinSet(BTN_ENTER_SYS_WKUP2_GPIO_Port, BTN_EXIT_Pin))		{ btn |= exitgomb;}
-    else{ btn &= ~exitgomb;}
+    if(LL_GPIO_IsInputPinSet(BTN_ENTER_GPIO_Port, BTN_ENTER_Pin))		{ btn |= entergomb;}
+    else{ btn &= ~entergomb;}
     /* USER CODE END LL_EXTI_LINE_9 */
   }
   /* USER CODE BEGIN EXTI9_5_IRQn 1 */
-
 #ifndef DEBUG
-  if(Tgame_status==2 && btn)//in Tgame
+  if(btn)
   {
-	Tgame_button_isr();
+	  if(GameBtnIsrPntr != NULL)
+	  {
+		  GameBtnIsrPntr();
+	  }
   } else{}
 #endif
-
   /* USER CODE END EXTI9_5_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM1 update interrupt and TIM16 global interrupt.
+  */
+void TIM1_UP_TIM16_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM1_UP_TIM16_IRQn 0 */
+	if(LL_TIM_IsActiveFlag_CC1(TIM16))
+	{
+		LL_TIM_ClearFlag_CC1(TIM16);
+
+		game_main_isr_presc++;
+		if(game_main_isr_presc >game_main_isr_presc_cmp_val)
+		{
+			game_main_isr_presc = 0;
+			if(GameMainIsrPntr != NULL)
+			{
+				GameMainIsrPntr();
+			}
+		}
+	}
+  /* USER CODE END TIM1_UP_TIM16_IRQn 0 */
+  /* USER CODE BEGIN TIM1_UP_TIM16_IRQn 1 */
+
+  /* USER CODE END TIM1_UP_TIM16_IRQn 1 */
 }
 
 /**
@@ -323,8 +392,8 @@ void TIM2_IRQHandler(void)
 		switch(cpt1.cptnum)
 		{
 			case 0:	cpt1.c1 = LL_TIM_IC_GetCaptureCH1(TIM2);
-					cpt1.cptnum=1;
-					cpt1.datastate |= 0x01;
+					cpt1.cptnum = 1;
+					cpt1.datastate |= c1Valid;
 
 					if( (cpt1.datastate & (c1Valid|c2Valid)) == (c1Valid|c2Valid) )
 					{
@@ -334,11 +403,11 @@ void TIM2_IRQHandler(void)
 						}
 						else
 						{
-							ti1=( cpt1.c1 + (65535-cpt1.c2) );//16 bit timer //only 1 overflow occured
+							ti1=( cpt1.c1 + (timAR-cpt1.c2) );//32 bit timer //only 1 overflow occured
 							if(cpt1.ovfbtwcpt > 1)
 							{
 								cpt1.ovfbtwcpt--;//one whole timer period was already added before this if
-								ti1=( ti1+(cpt1.ovfbtwcpt*65535) );
+								ti1=( ti1+(cpt1.ovfbtwcpt*timAR) );
 							}else{}
 						}
 					}else{}
@@ -346,7 +415,7 @@ void TIM2_IRQHandler(void)
 
 			case 1:	cpt1.c2 = LL_TIM_IC_GetCaptureCH1(TIM2);
 					cpt1.cptnum = 0;
-					cpt1.datastate |= 0x02;
+					cpt1.datastate |= c2Valid;
 
 					if( (cpt1.datastate & (c1Valid|c2Valid)) == (c1Valid|c2Valid) )
 					{
@@ -356,11 +425,11 @@ void TIM2_IRQHandler(void)
 						}
 						else
 						{
-							ti1=( cpt1.c2 + (65535-cpt1.c1) );//16 bit timer //only 1 overflow occured
+							ti1=( cpt1.c2 + (timAR-cpt1.c1) );//32 bit timer //only 1 overflow occured
 							if(cpt1.ovfbtwcpt > 1)
 							{
 								cpt1.ovfbtwcpt--;//one whole timer period was already added before this if
-								ti1=( ti1+(cpt1.ovfbtwcpt*65535) );
+								ti1=( ti1+(cpt1.ovfbtwcpt*timAR) );
 							}else{}
 						}
 					}else{}
@@ -402,11 +471,11 @@ void TIM2_IRQHandler(void)
 			}
 			else
 			{
-				ti2=( cpt2.c2 + (65535-cpt2.c1) );
+				ti2=( cpt2.c2 + (timAR-cpt2.c1) );
 				if(cpt2.ovfbtwcpt > 1)
 				{
 					cpt2.ovfbtwcpt--;
-					ti2=( ti2+(cpt2.ovfbtwcpt*65535) );
+					ti2=( ti2+(cpt2.ovfbtwcpt*timAR) );
 				}else{}
 			}
 			t2=( (float)(ti2*(float)timtick) );
@@ -459,20 +528,28 @@ void EXTI15_10_IRQHandler(void)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_12);
     /* USER CODE BEGIN LL_EXTI_LINE_12 */
-    if(LL_GPIO_IsInputPinSet(BTN_JOBB_GPIO_Port, BTN_JOBB_Pin))		{ btn |= jobbgomb;}
-    else{ btn &= ~jobbgomb;}
+    if(LL_GPIO_IsInputPinSet(BTN_EXIT_GPIO_Port, BTN_EXIT_Pin))		{ btn |= exitgomb;}
+    else{ btn &= ~exitgomb;}
     /* USER CODE END LL_EXTI_LINE_12 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_13) != RESET)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_13);
     /* USER CODE BEGIN LL_EXTI_LINE_13 */
-    if(LL_GPIO_IsInputPinSet(BTN_ENTER_SYS_WKUP2_GPIO_Port, BTN_ENTER_SYS_WKUP2_Pin))		{ btn |= entergomb;}
-    else{ btn &= ~entergomb;}
+    if(LL_GPIO_IsInputPinSet(BTN_BAL_SYS_WKUP2_GPIO_Port, BTN_BAL_SYS_WKUP2_Pin))		{ btn |= balgomb;}
+    else{ btn &= ~balgomb;}
     /* USER CODE END LL_EXTI_LINE_13 */
   }
   /* USER CODE BEGIN EXTI15_10_IRQn 1 */
-
+#ifndef DEBUG
+  if(btn)
+  {
+	  if(GameBtnIsrPntr != NULL)
+	  {
+		  GameBtnIsrPntr();
+	  }
+  } else{}
+#endif
   /* USER CODE END EXTI15_10_IRQn 1 */
 }
 
@@ -485,7 +562,7 @@ void RTC_Alarm_IRQHandler(void)
 	if(LL_RTC_IsActiveFlag_ALRA(RTC))
 	{
 		LL_RTC_ClearFlag_ALRA(RTC);
-		LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_17);
+		LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_18);
 
 		if((alldata.speed > 0.5) && (system_bits & moving_time_recording_EN_1))	{ system_bits |= moving_time_recording_EN_2;}	else{ system_bits &= ~moving_time_recording_EN_2;}
 		if(system_bits & moving_time_recording_EN_1)
@@ -505,7 +582,11 @@ void RTC_Alarm_IRQHandler(void)
 			print_disp_mat();
 		}else{}
 
-		LL_ADC_REG_StartConversion(ADC1);
+		if(LL_ADC_IsActiveFlag_ADRDY(ADC1))
+		{
+			LL_ADC_REG_StartConversion(ADC1);
+		}
+
 	}else{}
   /* USER CODE END RTC_Alarm_IRQn 0 */
   /* USER CODE BEGIN RTC_Alarm_IRQn 1 */

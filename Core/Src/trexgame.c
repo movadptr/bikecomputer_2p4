@@ -52,6 +52,7 @@ int trexgame(void)
 
 	print_bmp_V(4, 50, bmp_misccactus_group, Pixel_on, Merge);
 
+	//TODO isr function pointer setup
 	//print_disp_mat();
 	while(!btn)
 	{

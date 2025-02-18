@@ -34,21 +34,21 @@
 
 #define _MS_blocks_x		15
 #define _MS_blocks_y		30
-#define numofmines			91
-#define _blocksize			5
+#define numofmines			91U
+#define _blocksize			5U
 
-#define flag_				100//ezt az értéket adja hozzá ha zászlóval kijelöli a cellát, így könnyű lesz megkülönböztetni
-#define detonated_mine_id	19
-#define mine_id				9
-#define eight_id			18
-#define seven_id			17
-#define six_id				16
-#define five_id				15
-#define four_id				14
-#define three_id			13
-#define two_id				12
-#define one_id				11
-#define void_id				10
+#define flag_				100U//ezt az értéket adja hozzá ha zászlóval kijelöli a cellát, így könnyű lesz megkülönböztetni
+#define detonated_mine_id	19U
+#define mine_id				9U
+#define eight_id			18U
+#define seven_id			17U
+#define six_id				16U
+#define five_id				15U
+#define four_id				14U
+#define three_id			13U
+#define two_id				12U
+#define one_id				11U
+#define void_id				10U
 
 int Minesweepergame(void);
 void MS_init(uint8_t** MS_mat);
@@ -150,6 +150,11 @@ int Minesweepergame(void)
 	}
 	return 0;
 }
+
+/////////////////////////////////////////////////////////////////
+
+
+
 /////////////////////////////////////////////////////////////////
 
 uint8_t win(int8_t mines_leftf, uint8_t** MS_mat)
@@ -345,19 +350,19 @@ void MS_print(uint8_t** MS_mat)
 								break;
 
 				case eight_id:	setpixel( (ix*(_blocksize-1))+2 , (iy*(_blocksize-1))+1 , Pixel_on);
-
+				//fall through
 				case seven_id:	setpixel( (ix*(_blocksize-1))+3 , (iy*(_blocksize-1))+1 , Pixel_on);
-
+				//fall through
 				case six_id:	setpixel( (ix*(_blocksize-1))+3 , (iy*(_blocksize-1))+2 , Pixel_on);
-
+				//fall through
 				case five_id:	setpixel( (ix*(_blocksize-1))+3 , (iy*(_blocksize-1))+3 , Pixel_on);
-
+				//fall through
 				case four_id:	setpixel( (ix*(_blocksize-1))+2 , (iy*(_blocksize-1))+3 , Pixel_on);
-
+				//fall through
 				case three_id:	setpixel( (ix*(_blocksize-1))+1 , (iy*(_blocksize-1))+3 , Pixel_on);
-
+				//fall through
 				case two_id:	setpixel( (ix*(_blocksize-1))+1 , (iy*(_blocksize-1))+2 , Pixel_on);
-
+				//fall through
 				case one_id:	//setpixel( (ix*(_blocksize-1))+1 , (_MS_blocks_y*(_blocksize-1))-(_blocksize-1)-(iy*(_blocksize-1))+1 , Pixel_on);
 								setpixel( (ix*(_blocksize-1))+1 , (iy*(_blocksize-1))+1 , Pixel_on);
 			}

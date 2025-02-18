@@ -82,27 +82,21 @@ lap_tmp ltmp={0};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
+
 static void MX_GPIO_Init(void);
-static void MX_DMA_Init(void);
 static void MX_RNG_Init(void);
-static void MX_RTC_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_TIM15_Init(void);
+static void MX_TIM16_Init(void);
 /* USER CODE BEGIN PFP */
 
-static void _err_hnd_st_msg(char* str1, char* str2);
-static void pwr_down(void);
-static void copy_lap(lap* l_dest, lap* l_source);
-
-static void set_GPIOs_to_analog_mode(void);
-
-static void Calibrate_ADC(void);
-static void write_secondary_page_data(void);
 static void init(void);
+void ClockConfig(void);
+static void DMA_Init(void);
+
 
 /* USER CODE END PFP */
 
@@ -128,11 +122,12 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  ClockConfig();
 
   /* USER CODE END Init */
 
   /* Configure the system clock */
-  SystemClock_Config();
+  //SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
 
@@ -140,14 +135,18 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
+
   MX_RNG_Init();
-  MX_RTC_Init();
+
   MX_SPI1_Init();
+
   MX_ADC1_Init();
+
+  DMA_Init();
   MX_TIM2_Init();
   MX_TIM6_Init();
   MX_TIM15_Init();
+  MX_TIM16_Init();
   /* USER CODE BEGIN 2 */
 
   init();
@@ -176,18 +175,17 @@ int main(void)
 				  break;
 		}
 		print_disp_mat();
-		//LL_TIM_EnableIT_CC2(TIM21);
 		btn = 0;
 
 		while(btn == 0x00)//amíg nem nyomok semmit itt ciklik
 		{
-			NVIC_DisableIRQ(SysTick_IRQn);
+			//TODO
+			/*NVIC_DisableIRQ(SysTick_IRQn);
 			HAL_PWR_EnterSLEEPMode(PWR_LOWPOWERREGULATOR_ON, PWR_SLEEPENTRY_WFI);
 			NVIC_EnableIRQ(SysTick_IRQn);
-			asm("nop");
+			*/
+			__NOP();
 		}
-
-		//LL_TIM_DisableIT_CC2(TIM21);
 
 		if(btn == jobbgomb)
 		{
@@ -314,71 +312,7 @@ int main(void)
   /* USER CODE END 3 */
 }
 
-/**
-  * @brief System Clock Configuration
-  * @retval None
-  */
-void SystemClock_Config(void)
-{
-  LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
-  while(LL_FLASH_GetLatency()!= LL_FLASH_LATENCY_2)
-  {
-  }
-  LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
-  while (LL_PWR_IsActiveFlag_VOS() != 0)
-  {
-  }
-  LL_RCC_HSI_Enable();
 
-   /* Wait till HSI is ready */
-  while(LL_RCC_HSI_IsReady() != 1)
-  {
-
-  }
-  LL_RCC_HSI_SetCalibTrimming(64);
-  LL_RCC_HSI48_Enable();
-
-   /* Wait till HSI48 is ready */
-  while(LL_RCC_HSI48_IsReady() != 1)
-  {
-
-  }
-  LL_PWR_EnableBkUpAccess();
-  LL_RCC_LSE_SetDriveCapability(LL_RCC_LSEDRIVE_LOW);
-  LL_RCC_LSE_Enable();
-
-   /* Wait till LSE is ready */
-  while(LL_RCC_LSE_IsReady() != 1)
-  {
-
-  }
-  LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSI, LL_RCC_PLLM_DIV_1, 10, LL_RCC_PLLR_DIV_4);
-  LL_RCC_PLL_EnableDomain_SYS();
-  LL_RCC_PLL_Enable();
-
-   /* Wait till PLL is ready */
-  while(LL_RCC_PLL_IsReady() != 1)
-  {
-
-  }
-  LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL);
-
-   /* Wait till System clock is ready */
-  while(LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL)
-  {
-
-  }
-  LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
-  LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_1);
-  LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_DIV_1);
-  LL_SetSystemCoreClock(40000000);
-
-   /* Update the time base */
-  if (HAL_InitTick (TICK_INT_PRIORITY) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
 
 /**
   * @brief ADC1 Initialization Function
@@ -389,7 +323,7 @@ static void MX_ADC1_Init(void)
 {
 
   /* USER CODE BEGIN ADC1_Init 0 */
-
+	Calibrate_ADC();
   /* USER CODE END ADC1_Init 0 */
 
   LL_ADC_InitTypeDef ADC_InitStruct = {0};
@@ -399,10 +333,8 @@ static void MX_ADC1_Init(void)
   LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* Peripheral clock enable */
-  LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_ADC);
 
-  LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOA);
-  LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOB);
+
   /**ADC1 GPIO Configuration
   PA1   ------> ADC1_IN6
   PB1   ------> ADC1_IN16
@@ -417,6 +349,9 @@ static void MX_ADC1_Init(void)
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   LL_GPIO_Init(LIGHT_SENSE_GPIO_Port, &GPIO_InitStruct);
 
+  NVIC_SetPriority(ADC1_2_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+  NVIC_EnableIRQ(ADC1_2_IRQn);
+
   /* ADC1 DMA Init */
 
   /* ADC1 Init */
@@ -424,7 +359,7 @@ static void MX_ADC1_Init(void)
 
   LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_CHANNEL_1, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
 
-  LL_DMA_SetChannelPriorityLevel(DMA1, LL_DMA_CHANNEL_1, LL_DMA_PRIORITY_LOW);
+  LL_DMA_SetChannelPriorityLevel(DMA1, LL_DMA_CHANNEL_1, LL_DMA_PRIORITY_HIGH);
 
   LL_DMA_SetMode(DMA1, LL_DMA_CHANNEL_1, LL_DMA_MODE_CIRCULAR);
 
@@ -458,6 +393,8 @@ static void MX_ADC1_Init(void)
   ADC_CommonInitStruct.CommonClock = LL_ADC_CLOCK_ASYNC_DIV1;
   ADC_CommonInitStruct.Multimode = LL_ADC_MULTI_INDEPENDENT;
   LL_ADC_CommonInit(__LL_ADC_COMMON_INSTANCE(ADC1), &ADC_CommonInitStruct);
+
+
 
   /* Disable ADC deep power down (enabled by default after reset state) */
   LL_ADC_DisableDeepPowerDown(ADC1);
@@ -501,10 +438,26 @@ static void MX_ADC1_Init(void)
   LL_ADC_SetChannelSingleDiff(ADC1, LL_ADC_CHANNEL_TEMPSENSOR, LL_ADC_SINGLE_ENDED);
   /* USER CODE BEGIN ADC1_Init 2 */
 
+  LL_ADC_Enable(ADC1);
   /* USER CODE END ADC1_Init 2 */
 
 }
 
+/**
+  * Enable DMA controller clock
+  */
+static void DMA_Init(void)
+{
+  LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_1, used_ADC_channels);
+  LL_DMA_SetMemoryAddress(DMA1, LL_DMA_CHANNEL_1, (uint32_t) adc_conv_results);
+  LL_DMA_SetPeriphAddress(DMA1, LL_DMA_CHANNEL_1, (uint32_t) (&(ADC1->DR)) );
+
+  LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_1);
+  LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_1);
+
+  NVIC_SetPriority(DMA1_Channel1_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+  NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+}
 /**
   * @brief RNG Initialization Function
   * @param None
@@ -517,10 +470,6 @@ static void MX_RNG_Init(void)
 
   /* USER CODE END RNG_Init 0 */
 
-  LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_HSI48);
-
-  /* Peripheral clock enable */
-  LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_RNG);
 
   /* USER CODE BEGIN RNG_Init 1 */
 
@@ -532,101 +481,7 @@ static void MX_RNG_Init(void)
 
 }
 
-/**
-  * @brief RTC Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_RTC_Init(void)
-{
 
-  /* USER CODE BEGIN RTC_Init 0 */
-
-  /* USER CODE END RTC_Init 0 */
-
-  LL_RTC_InitTypeDef RTC_InitStruct = {0};
-  LL_RTC_TimeTypeDef RTC_TimeStruct = {0};
-  LL_RTC_DateTypeDef RTC_DateStruct = {0};
-  LL_RTC_AlarmTypeDef RTC_AlarmStruct = {0};
-
-  if(LL_RCC_GetRTCClockSource() != LL_RCC_RTC_CLKSOURCE_LSE)
-  {
-    FlagStatus pwrclkchanged = RESET;
-    /* Update LSE configuration in Backup Domain control register */
-    /* Requires to enable write access to Backup Domain if necessary */
-    if (LL_APB1_GRP1_IsEnabledClock (LL_APB1_GRP1_PERIPH_PWR) != 1U)
-    {
-      /* Enables the PWR Clock and Enables access to the backup domain */
-      LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-      pwrclkchanged = SET;
-    }
-    if (LL_PWR_IsEnabledBkUpAccess () != 1U)
-    {
-      /* Enable write access to Backup domain */
-      LL_PWR_EnableBkUpAccess();
-      while (LL_PWR_IsEnabledBkUpAccess () == 0U)
-      {
-      }
-    }
-    LL_RCC_ForceBackupDomainReset();
-    LL_RCC_ReleaseBackupDomainReset();
-  LL_RCC_LSE_SetDriveCapability(LL_RCC_LSEDRIVE_LOW);
-    LL_RCC_LSE_Enable();
-
-   /* Wait till LSE is ready */
-    while(LL_RCC_LSE_IsReady() != 1)
-    {
-    }
-    LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
-    /* Restore clock configuration if changed */
-    if (pwrclkchanged == SET)
-    {
-      LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_PWR);
-    }
-  }
-
-  /* Peripheral clock enable */
-  LL_RCC_EnableRTC();
-
-  /* RTC interrupt Init */
-  NVIC_SetPriority(RTC_Alarm_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
-  NVIC_EnableIRQ(RTC_Alarm_IRQn);
-
-  /* USER CODE BEGIN RTC_Init 1 */
-
-  /* USER CODE END RTC_Init 1 */
-
-  /** Initialize RTC and set the Time and Date
-  */
-  RTC_InitStruct.HourFormat = LL_RTC_HOURFORMAT_24HOUR;
-  RTC_InitStruct.AsynchPrescaler = 127;
-  RTC_InitStruct.SynchPrescaler = 255;
-  LL_RTC_Init(RTC, &RTC_InitStruct);
-  RTC_TimeStruct.Hours = 0;
-  RTC_TimeStruct.Minutes = 0;
-  RTC_TimeStruct.Seconds = 0;
-  LL_RTC_TIME_Init(RTC, LL_RTC_FORMAT_BIN, &RTC_TimeStruct);
-  RTC_DateStruct.WeekDay = LL_RTC_WEEKDAY_MONDAY;
-  RTC_DateStruct.Month = LL_RTC_MONTH_JANUARY;
-  RTC_DateStruct.Day = 1;
-  RTC_DateStruct.Year = 0;
-  LL_RTC_DATE_Init(RTC, LL_RTC_FORMAT_BIN, &RTC_DateStruct);
-
-  /** Enable the Alarm A
-  */
-  RTC_AlarmStruct.AlarmTime.Hours = 0;
-  RTC_AlarmStruct.AlarmTime.Minutes = 0;
-  RTC_AlarmStruct.AlarmTime.Seconds = 0;
-  RTC_AlarmStruct.AlarmMask = LL_RTC_ALMA_MASK_ALL;
-  RTC_AlarmStruct.AlarmDateWeekDaySel = LL_RTC_ALMA_DATEWEEKDAYSEL_DATE;
-  RTC_AlarmStruct.AlarmDateWeekDay = 1;
-  LL_RTC_ALMA_Init(RTC, LL_RTC_FORMAT_BIN, &RTC_AlarmStruct);
-  LL_RTC_EnableIT_ALRA(RTC);
-  /* USER CODE BEGIN RTC_Init 2 */
-
-  /* USER CODE END RTC_Init 2 */
-
-}
 
 /**
   * @brief SPI1 Initialization Function
@@ -685,11 +540,7 @@ static void MX_TIM2_Init(void)
 
   LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-  /* Peripheral clock enable */
-  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM2);
 
-  LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOA);
-  LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOB);
   /**TIM2 GPIO Configuration
   PA15 (JTDI)   ------> TIM2_CH1
   PB3 (JTDO/TRACESWO)   ------> TIM2_CH2
@@ -719,7 +570,7 @@ static void MX_TIM2_Init(void)
   /* USER CODE END TIM2_Init 1 */
   TIM_InitStruct.Prescaler = 0;
   TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
-  TIM_InitStruct.Autoreload = 80000000;
+  TIM_InitStruct.Autoreload = timAR;
   TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
   LL_TIM_Init(TIM2, &TIM_InitStruct);
   LL_TIM_DisableARRPreload(TIM2);
@@ -763,9 +614,6 @@ static void MX_TIM6_Init(void)
 
   LL_TIM_InitTypeDef TIM_InitStruct = {0};
 
-  /* Peripheral clock enable */
-  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM6);
-
   /* TIM6 interrupt Init */
   NVIC_SetPriority(TIM6_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),2, 0));
   NVIC_EnableIRQ(TIM6_IRQn);
@@ -773,9 +621,9 @@ static void MX_TIM6_Init(void)
   /* USER CODE BEGIN TIM6_Init 1 */
 
   /* USER CODE END TIM6_Init 1 */
-  TIM_InitStruct.Prescaler = 1;
+  TIM_InitStruct.Prescaler = 40000;
   TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
-  TIM_InitStruct.Autoreload = 40000;
+  TIM_InitStruct.Autoreload = 65535;
   LL_TIM_Init(TIM6, &TIM_InitStruct);
   LL_TIM_DisableARRPreload(TIM6);
   LL_TIM_SetTriggerOutput(TIM6, LL_TIM_TRGO_RESET);
@@ -804,9 +652,6 @@ static void MX_TIM15_Init(void)
 
   LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-  /* Peripheral clock enable */
-  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_TIM15);
-
   /* USER CODE BEGIN TIM15_Init 1 */
 
   /* USER CODE END TIM15_Init 1 */
@@ -819,7 +664,7 @@ static void MX_TIM15_Init(void)
   LL_TIM_DisableARRPreload(TIM15);
   LL_TIM_OC_EnablePreload(TIM15, LL_TIM_CHANNEL_CH1);
   TIM_OC_InitStruct.OCMode = LL_TIM_OCMODE_PWM1;
-  TIM_OC_InitStruct.OCState = LL_TIM_OCSTATE_DISABLE;
+  TIM_OC_InitStruct.OCState = LL_TIM_OCSTATE_ENABLE;
   TIM_OC_InitStruct.OCNState = LL_TIM_OCSTATE_DISABLE;
   TIM_OC_InitStruct.CompareValue = 50;
   TIM_OC_InitStruct.OCPolarity = LL_TIM_OCPOLARITY_HIGH;
@@ -836,12 +681,11 @@ static void MX_TIM15_Init(void)
   TIM_BDTRInitStruct.DeadTime = 0;
   TIM_BDTRInitStruct.BreakState = LL_TIM_BREAK_DISABLE;
   TIM_BDTRInitStruct.BreakPolarity = LL_TIM_BREAK_POLARITY_HIGH;
-  TIM_BDTRInitStruct.AutomaticOutput = LL_TIM_AUTOMATICOUTPUT_DISABLE;
+  TIM_BDTRInitStruct.AutomaticOutput = LL_TIM_AUTOMATICOUTPUT_ENABLE;
   LL_TIM_BDTR_Init(TIM15, &TIM_BDTRInitStruct);
   /* USER CODE BEGIN TIM15_Init 2 */
 
-  /* USER CODE END TIM15_Init 2 */
-  LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOA);
+
   /**TIM15 GPIO Configuration
   PA2   ------> TIM15_CH1
   */
@@ -852,23 +696,62 @@ static void MX_TIM15_Init(void)
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   GPIO_InitStruct.Alternate = LL_GPIO_AF_14;
   LL_GPIO_Init(BACKLIGHT_PWM_GPIO_Port, &GPIO_InitStruct);
-
 }
 
 /**
-  * Enable DMA controller clock
+  * @brief TIM16 Initialization Function
+  * @param None
+  * @retval None
   */
-static void MX_DMA_Init(void)
+static void MX_TIM16_Init(void)
 {
 
-  /* Init with LL driver */
-  /* DMA controller clock enable */
-  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
+  /* USER CODE BEGIN TIM16_Init 0 */
 
-  /* DMA interrupt init */
-  /* DMA1_Channel1_IRQn interrupt configuration */
-  NVIC_SetPriority(DMA1_Channel1_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
-  NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+  /* USER CODE END TIM16_Init 0 */
+
+  LL_TIM_InitTypeDef TIM_InitStruct = {0};
+  LL_TIM_OC_InitTypeDef TIM_OC_InitStruct = {0};
+  LL_TIM_BDTR_InitTypeDef TIM_BDTRInitStruct = {0};
+
+  /* Peripheral clock enable */
+  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_TIM16);
+
+  /* TIM16 interrupt Init */
+  NVIC_SetPriority(TIM1_UP_TIM16_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+  NVIC_EnableIRQ(TIM1_UP_TIM16_IRQn);
+
+  /* USER CODE BEGIN TIM16_Init 1 */
+
+  /* USER CODE END TIM16_Init 1 */
+  TIM_InitStruct.Prescaler = 400;
+  TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
+  TIM_InitStruct.Autoreload = 10000;//100ms
+  TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
+  TIM_InitStruct.RepetitionCounter = 0;
+  LL_TIM_Init(TIM16, &TIM_InitStruct);
+  LL_TIM_DisableARRPreload(TIM16);
+  TIM_OC_InitStruct.OCMode = LL_TIM_OCMODE_FROZEN;
+  TIM_OC_InitStruct.OCState = LL_TIM_OCSTATE_DISABLE;
+  TIM_OC_InitStruct.OCNState = LL_TIM_OCSTATE_DISABLE;
+  TIM_OC_InitStruct.CompareValue = 0;
+  TIM_OC_InitStruct.OCPolarity = LL_TIM_OCPOLARITY_HIGH;
+  TIM_OC_InitStruct.OCNPolarity = LL_TIM_OCPOLARITY_HIGH;
+  TIM_OC_InitStruct.OCIdleState = LL_TIM_OCIDLESTATE_LOW;
+  TIM_OC_InitStruct.OCNIdleState = LL_TIM_OCIDLESTATE_LOW;
+  LL_TIM_OC_Init(TIM16, LL_TIM_CHANNEL_CH1, &TIM_OC_InitStruct);
+  LL_TIM_OC_DisableFast(TIM16, LL_TIM_CHANNEL_CH1);
+  TIM_BDTRInitStruct.OSSRState = LL_TIM_OSSR_DISABLE;
+  TIM_BDTRInitStruct.OSSIState = LL_TIM_OSSI_DISABLE;
+  TIM_BDTRInitStruct.LockLevel = LL_TIM_LOCKLEVEL_OFF;
+  TIM_BDTRInitStruct.DeadTime = 0;
+  TIM_BDTRInitStruct.BreakState = LL_TIM_BREAK_DISABLE;
+  TIM_BDTRInitStruct.BreakPolarity = LL_TIM_BREAK_POLARITY_HIGH;
+  TIM_BDTRInitStruct.AutomaticOutput = LL_TIM_AUTOMATICOUTPUT_DISABLE;
+  LL_TIM_BDTR_Init(TIM16, &TIM_BDTRInitStruct);
+  /* USER CODE BEGIN TIM16_Init 2 */
+  LL_TIM_EnableIT_CC1(TIM16);
+  /* USER CODE END TIM16_Init 2 */
 
 }
 
@@ -884,10 +767,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN MX_GPIO_Init_1 */
 /* USER CODE END MX_GPIO_Init_1 */
 
-  /* GPIO Ports Clock Enable */
-  LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOC);
-  LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOA);
-  LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOB);
+
 
   /**/
   LL_GPIO_SetOutputPin(GPIOA, LCD_CS_Pin|LCD_RES_Pin);
@@ -910,7 +790,7 @@ static void MX_GPIO_Init(void)
   LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /**/
-  GPIO_InitStruct.Pin = ACC_CS_Pin|EEPROM_CS_Pin|FLASHLIGHT_Pin|D_LED_Pin;
+  GPIO_InitStruct.Pin = ACC_CS_Pin|FLASHLIGHT_Pin|D_LED_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
@@ -922,6 +802,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   LL_GPIO_Init(ACC_INT_GPIO_Port, &GPIO_InitStruct);
+
+  /**/
+  GPIO_InitStruct.Pin = EEPROM_CS_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
+  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_MEDIUM;
+  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  LL_GPIO_Init(EEPROM_CS_GPIO_Port, &GPIO_InitStruct);
 
   /**/
   LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTB, LL_SYSCFG_EXTI_LINE12);
@@ -940,7 +828,7 @@ static void MX_GPIO_Init(void)
   EXTI_InitStruct.Line_32_63 = LL_EXTI_LINE_NONE;
   EXTI_InitStruct.LineCommand = ENABLE;
   EXTI_InitStruct.Mode = LL_EXTI_MODE_IT;
-  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING;
+  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING_FALLING;
   LL_EXTI_Init(&EXTI_InitStruct);
 
   /**/
@@ -948,7 +836,7 @@ static void MX_GPIO_Init(void)
   EXTI_InitStruct.Line_32_63 = LL_EXTI_LINE_NONE;
   EXTI_InitStruct.LineCommand = ENABLE;
   EXTI_InitStruct.Mode = LL_EXTI_MODE_IT;
-  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING;
+  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING_FALLING;
   LL_EXTI_Init(&EXTI_InitStruct);
 
   /**/
@@ -956,7 +844,7 @@ static void MX_GPIO_Init(void)
   EXTI_InitStruct.Line_32_63 = LL_EXTI_LINE_NONE;
   EXTI_InitStruct.LineCommand = ENABLE;
   EXTI_InitStruct.Mode = LL_EXTI_MODE_IT;
-  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING;
+  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING_FALLING;
   LL_EXTI_Init(&EXTI_InitStruct);
 
   /**/
@@ -964,32 +852,32 @@ static void MX_GPIO_Init(void)
   EXTI_InitStruct.Line_32_63 = LL_EXTI_LINE_NONE;
   EXTI_InitStruct.LineCommand = ENABLE;
   EXTI_InitStruct.Mode = LL_EXTI_MODE_IT;
-  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING;
+  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING_FALLING;
   LL_EXTI_Init(&EXTI_InitStruct);
-
-  /**/
-  LL_GPIO_SetPinPull(BTN_JOBB_GPIO_Port, BTN_JOBB_Pin, LL_GPIO_PULL_NO);
-
-  /**/
-  LL_GPIO_SetPinPull(BTN_ENTER_SYS_WKUP2_GPIO_Port, BTN_ENTER_SYS_WKUP2_Pin, LL_GPIO_PULL_NO);
 
   /**/
   LL_GPIO_SetPinPull(BTN_EXIT_GPIO_Port, BTN_EXIT_Pin, LL_GPIO_PULL_NO);
 
   /**/
-  LL_GPIO_SetPinPull(BTN_BAL_GPIO_Port, BTN_BAL_Pin, LL_GPIO_PULL_NO);
+  LL_GPIO_SetPinPull(BTN_BAL_SYS_WKUP2_GPIO_Port, BTN_BAL_SYS_WKUP2_Pin, LL_GPIO_PULL_NO);
 
   /**/
-  LL_GPIO_SetPinMode(BTN_JOBB_GPIO_Port, BTN_JOBB_Pin, LL_GPIO_MODE_INPUT);
+  LL_GPIO_SetPinPull(BTN_JOBB_GPIO_Port, BTN_JOBB_Pin, LL_GPIO_PULL_NO);
 
   /**/
-  LL_GPIO_SetPinMode(BTN_ENTER_SYS_WKUP2_GPIO_Port, BTN_ENTER_SYS_WKUP2_Pin, LL_GPIO_MODE_INPUT);
+  LL_GPIO_SetPinPull(BTN_ENTER_GPIO_Port, BTN_ENTER_Pin, LL_GPIO_PULL_NO);
 
   /**/
   LL_GPIO_SetPinMode(BTN_EXIT_GPIO_Port, BTN_EXIT_Pin, LL_GPIO_MODE_INPUT);
 
   /**/
-  LL_GPIO_SetPinMode(BTN_BAL_GPIO_Port, BTN_BAL_Pin, LL_GPIO_MODE_INPUT);
+  LL_GPIO_SetPinMode(BTN_BAL_SYS_WKUP2_GPIO_Port, BTN_BAL_SYS_WKUP2_Pin, LL_GPIO_MODE_INPUT);
+
+  /**/
+  LL_GPIO_SetPinMode(BTN_JOBB_GPIO_Port, BTN_JOBB_Pin, LL_GPIO_MODE_INPUT);
+
+  /**/
+  LL_GPIO_SetPinMode(BTN_ENTER_GPIO_Port, BTN_ENTER_Pin, LL_GPIO_MODE_INPUT);
 
   /* EXTI interrupt init*/
   NVIC_SetPriority(EXTI9_5_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
@@ -1006,23 +894,48 @@ static void MX_GPIO_Init(void)
 
 //////////////functions////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+float calcSTM32temp(uint16_t rawtemp)
+{
+	float temp = 0;
+	float CalTempDiff = (TEMPSENSOR_CAL2_TEMP-TEMPSENSOR_CAL1_TEMP);
+	float CalValDiff = ((*TEMPSENSOR_CAL2_ADDR)-(*TEMPSENSOR_CAL1_ADDR));
+
+	//Have to season the ADC reading with the Vref(Avcc) mismatch (3.3V/3.0V)
+	//tempsensor was calibrated with TEMPSENSOR_CAL_VREFANALOG which is 3V
+	temp = (CalTempDiff / CalValDiff) * (((float)rawtemp*(3.3/3.0)) - (float)(*TEMPSENSOR_CAL1_ADDR)) + (float)TEMPSENSOR_CAL1_TEMP;//°C
+
+	return temp;
+}
+
 /*
  * @note Calibration should be performed before starting A/D conversion.
  * If it is performed after the ADC init it will mess up (sifts by one) the channel order for the DMA
  */
-static void Calibrate_ADC(void)
+void Calibrate_ADC(void)
 {
-	uint8_t atmpf = 0;
-	LL_ADC_StartCalibration(ADC1);
+	LL_ADC_DisableDeepPowerDown(ADC1);
+	LL_ADC_EnableInternalRegulator(ADC1);
+	uint32_t wait_loop_index;
+	wait_loop_index = ((LL_ADC_DELAY_INTERNAL_REGUL_STAB_US * (SystemCoreClock / (100000 * 2))) / 10);
+	while(wait_loop_index != 0)
+	{
+		wait_loop_index--;
+	}
+	LL_ADC_Enable(ADC1);//idk why, have to enable it before disabling, otherwise ADC calibration won't finish
+	LL_mDelay(1);
+	LL_ADC_Disable(ADC1);
+	ADC1->CR &= (~ADC_CR_ADCALDIF);
+	ADC1->CR |= ADC_CR_ADCAL;
+	wait_loop_index = 0;
 	while( (ADC1->CR & ADC_CR_ADCAL) == ADC_CR_ADCAL )//Wait for calibration completion
 	{
-		if(atmpf==0xff)	{ Error_Handler(); break;}	else{}
-		atmpf++;
+		__NOP();
+		if(wait_loop_index==0x0000ffff)	{ Error_Handler(); break;}	else{}
+		wait_loop_index++;
 	}
-	LL_ADC_ClearFlag_EOCAL(ADC1);
 }
 
-static void copy_lap(lap* l_dest, lap* l_source)
+void copy_lap(lap* l_dest, lap* l_source)
 {
 	l_dest->hours = l_source->hours;
 	l_dest->mins = l_source->mins;
@@ -1035,7 +948,7 @@ static void copy_lap(lap* l_dest, lap* l_source)
 /*
  * note: standby mód, wakeup source: wakeup pin2 (pc13)
  */
-static void pwr_down(void)
+void pwr_down(void)
 {
 	if(system_bits & moving_time_recording_EN_1)	{ system_bits &= ~(moving_time_recording_EN_1 | moving_time_recording_EN_2);}	else{}//mérés leállí­tása, ha nem lett volna leállí­tva
 
@@ -1062,17 +975,18 @@ static void pwr_down(void)
 	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts
 	EXTI->PR2 = 0x00000078;//clear pending interrupts
 	LL_GPIO_ResetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
-	set_GPIOs_to_analog_mode();
 	__enable_irq();
 
 	HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);
+	RCC->BDCR |= (RCC_BDCR_LSEON | RCC_BDCR_RTCEN);
+
 	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts							//	    ________  	//
 	EXTI->PR2 = 0x00000078;//clear pending interrupts							//     /  zzzz  \	//
 	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);//clear wake up flag						//     | zzzzzz |	//
-	HAL_PWR_EnterSTANDBYMode();//after wake from standby, jumps to reset vector	//    <_________/	//
+	HAL_PWREx_EnterSHUTDOWNMode();//after wake up, jumps to reset vector	    //    <_________/	//
 }
 
-static void write_secondary_page_data(void)
+void write_secondary_page_data(void)
 {
 	write_character_V(22, 121, ':', Pixel_on, size_5x8);
 	write_character_V(40, 121, ':', Pixel_on, size_5x8);
@@ -1232,7 +1146,7 @@ void get_rtc_data(void)
 	RTCdate.WeekDay = __LL_RTC_CONVERT_BCD2BIN(LL_RTC_DATE_GetWeekDay(RTC));
 }
 
-static void _err_hnd_st_msg(char* str1, char*str2)
+void _err_hnd_st_msg(char* str1, char*str2)
 {
 	delete_disp_mat();
 	if(str1!=0)	{write_text_V(0, 64, str1, Pixel_on, size_5x8);}
@@ -1253,7 +1167,7 @@ uint32_t get_dist_for_new_tyre(float old_tyre, float new_tyre, uint32_t current_
 void SetSmoothCalib(int16_t calv)
 {
 	uint16_t atmp=0;
-	while((RTC->ISR & RTC_ISR_RECALPF) == RTC_ISR_RECALPF) //Wait until it's allow to modify calibartion register
+	while((RTC->ICSR & RTC_ICSR_RECALPF) == RTC_ICSR_RECALPF) //Wait until it's allow to modify calibartion register
 	{
 		if(atmp == 0xffff)	{ return;} else{}//timeout
 		asm("nop");
@@ -1261,7 +1175,7 @@ void SetSmoothCalib(int16_t calv)
 	}
 	//clear prev cal period value; 32sec period val is 0 so don't have to set new, clr old calib val
 	RTC->CALR &= (uint32_t)~((uint32_t)RTC_CALR_CALW8 | (uint32_t)RTC_CALR_CALW16 | (uint32_t)RTC_CALR_CALM_Msk | (uint32_t)RTC_CALR_CALP_Msk);
-	while((RTC->ISR & RTC_ISR_RECALPF) == RTC_ISR_RECALPF) //Wait until it's allow to modify calibartion register
+	while((RTC->ICSR & RTC_ICSR_RECALPF) == RTC_ICSR_RECALPF) //Wait until it's allow to modify calibartion register
 	{
 		if(atmp == 0xffff)	{ return;} else{}//timeout
 		asm("nop");
@@ -1347,16 +1261,18 @@ static void init(void)
 	//TODO put debloated inits here
 
 
+	HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN2);
 
 	__enable_irq();
 
 	LL_mDelay(20);//wait
 
-	uint8_t atmp=0;
-	//disable protection on all memory segment
-	atmp = Read_SREG_M95010_W_EEPROM();
-	if(atmp & (~((1<<BP0) | (1<<BP1))))	{ Write_SREG_M95010_W_EEPROM( atmp & (~((1<<BP0) | (1<<BP1))) );}	else{}
-
+	{
+		uint8_t tmp=0;
+		//disable protection on all memory segment in EEPROM
+		tmp = Read_SREG_M95010_W_EEPROM();
+		if(tmp & (~((1<<BP0) | (1<<BP1))))	{ Write_SREG_M95010_W_EEPROM( tmp & (~((1<<BP0) | (1<<BP1))) );}	else{}
+	}
 	saved_bits = Read_M95010_W_EEPROM(EE_bitek);
 
 	LCD_init(Read_M95010_W_EEPROM(EE_contrast));//15
@@ -1373,26 +1289,27 @@ static void init(void)
 	LL_TIM_EnableIT_CC2(TIM2);
 	LL_TIM_EnableIT_CC3(TIM2);
 
-	LL_TIM_EnableCounter(TIM15);
-
 	LL_TIM_EnableUpdateEvent(TIM6);
 	LL_TIM_EnableIT_UPDATE(TIM6);
 
-	atmp = Read_M95010_W_EEPROM(EE_curr_tyre_id);
-	switch(atmp)
 	{
-		case tyre_id_700x23C:	curr_tyre = tyre_700x23C;
-								break;
-		case tyre_id_700x25C: 	curr_tyre = tyre_700x25C;
-								break;
-		//case tyre_id_ :	break;
-		//case tyre_id_ :	break;
-		case tyre_id_custom_perimeter:
-								curr_tyre = (float) (((uint16_t)( Read_M95010_W_EEPROM(EE_custom_tyre_perimeter_L) | (Read_M95010_W_EEPROM(EE_custom_tyre_perimeter_H)<<8) )) /(float)1000 );
-								break;
-		default:				curr_tyre=50;//error
-								_err_hnd_st_msg("Tyre__", "__error");
-								break;
+		uint8_t tmp=0;
+		tmp = Read_M95010_W_EEPROM(EE_curr_tyre_id);
+		switch(tmp)
+		{
+			case tyre_id_700x23C:	curr_tyre = tyre_700x23C;
+									break;
+			case tyre_id_700x25C: 	curr_tyre = tyre_700x25C;
+									break;
+			//case tyre_id_ :	break;
+			//case tyre_id_ :	break;
+			case tyre_id_custom_perimeter:
+									curr_tyre = (float) (((uint16_t)( Read_M95010_W_EEPROM(EE_custom_tyre_perimeter_L) | (Read_M95010_W_EEPROM(EE_custom_tyre_perimeter_H)<<8) )) /(float)1000 );
+									break;
+			default:				curr_tyre=50;//error
+									_err_hnd_st_msg("Tyre__", "__error");
+									break;
+		}
 	}
 
 	alldata.totdist = (uint32_t)(Read_M95010_W_EEPROM(EE_totdist_0) |
@@ -1403,24 +1320,164 @@ static void init(void)
 	__disable_irq();
 
 	LL_RCC_EnableRTC();//Peripheral clock enable
-	if(PWR->SR1 & PWR_SR1_SBF)	{ PWR->SR1 &= ~PWR_SR1_SBF;}	//ha a SBF flag aktív akkor standby módban volt, nem kell az RTC init, mert stanby módban az RTC regiszter értékek megmaradnak, ha nem aktív akkor kell az init mert power on reset volt -
-	//TODO else{ RTC_init();}										// - így elkerülhető az rtc init miatti kb 1 sec késés keletkezése wakeup-kor
+	NVIC_SetPriority(RTC_Alarm_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+	NVIC_EnableIRQ(RTC_Alarm_IRQn);
+
 	LL_RTC_DisableWriteProtection(RTC);
+
+	if (LL_RTC_EnterInitMode(RTC) != ERROR)//Set Initialization mode
+	{
+		LL_RTC_SetHourFormat(RTC, LL_RTC_HOURFORMAT_24HOUR);
+		if(PWR->SR1 & PWR_SR1_WUF2)	//check if wake up triggered by wakeUpPin2 or it was a power on reset
+		{
+			PWR->SCR &= ~PWR_SCR_CWUF2;//clear wakeup flag
+		}
+		else//if power on reset then do the init
+		{
+			LL_RTC_SetSynchPrescaler(RTC, 255);
+			LL_RTC_SetAsynchPrescaler(RTC, 127);
+		}
+		LL_RTC_DisableInitMode(RTC);// Exit Initialization mode
+		if(LL_RTC_IsShadowRegBypassEnabled(RTC) == 0U)//If  RTC_CR_BYPSHAD bit = 0, wait for synchro else this check is not needed
+		{
+		  LL_RTC_WaitForSynchro(RTC);
+		}
+	}
+
 	LL_RTC_ALMA_Disable(RTC);
 	LL_RTC_ALMA_SetMask(RTC, LL_RTC_ALMA_MASK_ALL);
-	LL_RTC_ALMA_SetSubSecondMask(RTC, RTC_ALRMASSR_MASKSS_Msk);
+	LL_RTC_ALMA_SetSubSecondMask(RTC, 0);
+	LL_RTC_ALMA_SetTimeFormat(RTC, LL_RTC_ALMA_TIME_FORMAT_AM);
 	EXTI->IMR1 |= LL_EXTI_LINE_18; //enable exti 18 int
 	EXTI->RTSR1 |= LL_EXTI_LINE_18; //rising edge
 	LL_RTC_EnableIT_ALRA(RTC);
 	LL_RTC_ALMA_Enable(RTC);
 	SetSmoothCalib( (int16_t)( (int16_t)Read_M95010_W_EEPROM(EE_RTC_smcalL) | ((int16_t)Read_M95010_W_EEPROM(EE_RTC_smcalH) << 8) ) );// best value on BK2.2 is 29 //kell ide mert tápfesz elvesztése esetén nem jegyzi meg az értéket
-	//LL_RTC_CAL_SetOutputFreq(RTC, LL_RTC_CALIB_OUTPUT_1HZ); //nem kell az init, a settings-ben lehet módosí­tani, de mivel nincs elmentve sehova se, ezért kikapcsolás után egyik se lesz beállítva, szóval ha mérni kell akkor be kell állítania menüben
 	LL_RTC_EnableWriteProtection(RTC);
-
-	HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN2);
 
 	__enable_irq();
 }
+
+
+void ClockConfig(void)
+{
+	LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
+	while(LL_FLASH_GetLatency()!= LL_FLASH_LATENCY_2)
+	{
+	}
+	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+	while (LL_PWR_IsActiveFlag_VOS() != 0)
+	{
+	}
+	LL_RCC_HSI_Enable();
+
+	/* Wait till HSI is ready */
+	while(LL_RCC_HSI_IsReady() != 1)
+	{
+
+	}
+	LL_RCC_HSI_SetCalibTrimming(64);
+	LL_RCC_HSI48_Enable();
+
+	/* Wait till HSI48 is ready */
+	while(LL_RCC_HSI48_IsReady() != 1)
+	{
+
+	}
+	LL_PWR_EnableBkUpAccess();
+	LL_RCC_LSE_SetDriveCapability(LL_RCC_LSEDRIVE_LOW);
+	LL_RCC_LSE_Enable();
+
+	/* Wait till LSE is ready */
+	while(LL_RCC_LSE_IsReady() != 1)
+	{
+
+	}
+	LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSI, LL_RCC_PLLM_DIV_1, 10, LL_RCC_PLLR_DIV_4);
+	LL_RCC_PLL_EnableDomain_SYS();
+	LL_RCC_PLL_Enable();
+
+	/* Wait till PLL is ready */
+	while(LL_RCC_PLL_IsReady() != 1)
+	{
+
+	}
+	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL);
+
+	/* Wait till System clock is ready */
+	while(LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL)
+	{
+
+	}
+	LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
+	LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_1);
+	LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_DIV_1);
+	LL_SetSystemCoreClock(40000000);
+
+	/* Update the time base */
+	if (HAL_InitTick (TICK_INT_PRIORITY) != HAL_OK)
+	{
+		Error_Handler();
+	}
+
+
+	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOA);
+	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOB);
+	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOC);
+
+	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_ADC);
+	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
+
+	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_HSI48);
+	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_RNG);
+
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM2);
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM6);
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_TIM15);
+	LL_TIM_SetClockSource(TIM15, LL_TIM_CLOCKSOURCE_INTERNAL);
+
+
+
+	if(LL_RCC_GetRTCClockSource() != LL_RCC_RTC_CLKSOURCE_LSE)
+	{
+		FlagStatus pwrclkchanged = RESET;
+		/* Update LSE configuration in Backup Domain control register */
+		/* Requires to enable write access to Backup Domain if necessary */
+		if (LL_APB1_GRP1_IsEnabledClock (LL_APB1_GRP1_PERIPH_PWR) != 1U)
+		{
+			/* Enables the PWR Clock and Enables access to the backup domain */
+			LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+			pwrclkchanged = SET;
+		}
+		if (LL_PWR_IsEnabledBkUpAccess () != 1U)
+		{
+			/* Enable write access to Backup domain */
+			LL_PWR_EnableBkUpAccess();
+			while (LL_PWR_IsEnabledBkUpAccess () == 0U)
+			{
+				__NOP();
+			}
+		}
+		LL_RCC_ForceBackupDomainReset();
+		LL_RCC_ReleaseBackupDomainReset();
+		LL_RCC_LSE_SetDriveCapability(LL_RCC_LSEDRIVE_LOW);
+		LL_RCC_LSE_Enable();
+
+		/* Wait till LSE is ready */
+		while(LL_RCC_LSE_IsReady() != 1)
+		{
+			__NOP();
+		}
+		LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
+		/* Restore clock configuration if changed */
+		if (pwrclkchanged == SET)
+		{
+			LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_PWR);
+		}
+	}
+}
+
+
 /* USER CODE END 4 */
 
 /**

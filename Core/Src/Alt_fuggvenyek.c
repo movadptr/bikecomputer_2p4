@@ -22,7 +22,13 @@ uint8_t reverse_byte(uint8_t byte)
 #if defined (USE_FULL_LL_DRIVER)	//STM32 mikrokontrollerhez LL driverrel
 uint32_t get_random_num(void)
 {
-	while( ! LL_RNG_IsActiveFlag_DRDY(RNG) );
+	if((LL_RNG_IsActiveFlag_CEIS(RNG)==0) && (LL_RNG_IsActiveFlag_CEIS(RNG)==0))//ha nincs hiba
+	{
+		while( ! LL_RNG_IsActiveFlag_DRDY(RNG) )
+		{
+			__NOP();
+		}
+	}
 	return LL_RNG_ReadRandData32(RNG);
 }
 #endif
