@@ -1,9 +1,0 @@
-../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_rng.h:511:26:LL_RNG_IsActiveFlag_DRDY	2
-../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_rng.h:640:26:LL_RNG_ReadRandData32	1
-../Core/Src/Alt_fuggvenyek.c:14:9:reverse_byte	1
-../Core/Src/Alt_fuggvenyek.c:23:10:get_random_num	2
-../Core/Src/Alt_fuggvenyek.c:30:6:delaynop	2
-../Core/Src/Alt_fuggvenyek.c:39:10:LFSR_random	1
-../Core/Src/Alt_fuggvenyek.c:44:10:stringsize	2
-../Core/Src/Alt_fuggvenyek.c:55:9:dec_to_bcd	1
-../Core/Src/Alt_fuggvenyek.c:60:9:bcd_to_dec	1

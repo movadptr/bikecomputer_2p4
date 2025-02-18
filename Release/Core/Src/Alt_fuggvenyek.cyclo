@@ -1,7 +1,0 @@
-../Core/Src/Alt_fuggvenyek.c:14:9:reverse_byte	1
-../Core/Src/Alt_fuggvenyek.c:23:10:get_random_num	2
-../Core/Src/Alt_fuggvenyek.c:30:6:delaynop	2
-../Core/Src/Alt_fuggvenyek.c:39:10:LFSR_random	1
-../Core/Src/Alt_fuggvenyek.c:44:10:stringsize	2
-../Core/Src/Alt_fuggvenyek.c:55:9:dec_to_bcd	1
-../Core/Src/Alt_fuggvenyek.c:60:9:bcd_to_dec	1

@@ -1,6 +1,0 @@
-../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_gpio.h:956:22:LL_GPIO_SetOutputPin	1
-../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_gpio.h:985:22:LL_GPIO_ResetOutputPin	1
-../Core/Src/M95010_W_EEPROM.c:15:9:Read_SREG_M95010_W_EEPROM	1
-../Core/Src/M95010_W_EEPROM.c:28:6:Write_SREG_M95010_W_EEPROM	1
-../Core/Src/M95010_W_EEPROM.c:47:9:Read_M95010_W_EEPROM	1
-../Core/Src/M95010_W_EEPROM.c:64:6:Write_M95010_W_EEPROM	2
