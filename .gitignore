@@ -11,6 +11,7 @@
 *.ilk
 *.map
 *.exp
+*.list
 
 # Precompiled Headers
 *.gch
@@ -50,3 +51,13 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+*.mk
+/Release
+/Debug
+*.prefs
+.cproject
+*.launch
+.cproject
+.cproject
+*.list
+
