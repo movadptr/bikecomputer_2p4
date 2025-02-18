@@ -79,6 +79,8 @@ capturedata cpt2={0};
 lap l1={0}, l2={0}, l3={0};
 lap_tmp ltmp={0};
 
+volatile uint8_t flashlight_blink_freq = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -641,21 +643,17 @@ static void MX_TIM6_Init(void)
   */
 static void MX_TIM15_Init(void)
 {
-
-  /* USER CODE BEGIN TIM15_Init 0 */
-
-  /* USER CODE END TIM15_Init 0 */
-
   LL_TIM_InitTypeDef TIM_InitStruct = {0};
   LL_TIM_OC_InitTypeDef TIM_OC_InitStruct = {0};
   LL_TIM_BDTR_InitTypeDef TIM_BDTRInitStruct = {0};
 
   LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-  /* USER CODE BEGIN TIM15_Init 1 */
+  NVIC_SetPriority(TIM1_BRK_TIM15_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+  NVIC_EnableIRQ(TIM1_BRK_TIM15_IRQn);
 
-  /* USER CODE END TIM15_Init 1 */
-  TIM_InitStruct.Prescaler = 627;
+  //1562 presc and 256 arr gives ~100Hz
+  TIM_InitStruct.Prescaler = 781;
   TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
   TIM_InitStruct.Autoreload = 255;
   TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
@@ -673,6 +671,12 @@ static void MX_TIM15_Init(void)
   TIM_OC_InitStruct.OCNIdleState = LL_TIM_OCIDLESTATE_LOW;
   LL_TIM_OC_Init(TIM15, LL_TIM_CHANNEL_CH1, &TIM_OC_InitStruct);
   LL_TIM_OC_DisableFast(TIM15, LL_TIM_CHANNEL_CH1);
+
+  TIM_OC_InitStruct.OCMode = LL_TIM_OCMODE_FROZEN;
+  TIM_OC_InitStruct.CompareValue = 0;
+  LL_TIM_OC_Init(TIM15, LL_TIM_CHANNEL_CH2, &TIM_OC_InitStruct);
+  LL_TIM_OC_DisableFast(TIM15, LL_TIM_CHANNEL_CH2);
+
   LL_TIM_SetTriggerOutput(TIM15, LL_TIM_TRGO_RESET);
   LL_TIM_DisableMasterSlaveMode(TIM15);
   TIM_BDTRInitStruct.OSSRState = LL_TIM_OSSR_DISABLE;
@@ -683,7 +687,6 @@ static void MX_TIM15_Init(void)
   TIM_BDTRInitStruct.BreakPolarity = LL_TIM_BREAK_POLARITY_HIGH;
   TIM_BDTRInitStruct.AutomaticOutput = LL_TIM_AUTOMATICOUTPUT_ENABLE;
   LL_TIM_BDTR_Init(TIM15, &TIM_BDTRInitStruct);
-  /* USER CODE BEGIN TIM15_Init 2 */
 
 
   /**TIM15 GPIO Configuration
@@ -696,6 +699,10 @@ static void MX_TIM15_Init(void)
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   GPIO_InitStruct.Alternate = LL_GPIO_AF_14;
   LL_GPIO_Init(BACKLIGHT_PWM_GPIO_Port, &GPIO_InitStruct);
+
+  LL_TIM_EnableCounter(TIM15);
+  LL_TIM_CC_DisableChannel(TIM15, LL_TIM_CHANNEL_CH1);//not to light up backlight even if setting is off
+  LL_TIM_CC_DisableChannel(TIM15, LL_TIM_CHANNEL_CH2);
 }
 
 /**
@@ -1274,6 +1281,7 @@ static void init(void)
 		if(tmp & (~((1<<BP0) | (1<<BP1))))	{ Write_SREG_M95010_W_EEPROM( tmp & (~((1<<BP0) | (1<<BP1))) );}	else{}
 	}
 	saved_bits = Read_M95010_W_EEPROM(EE_bitek);
+	flashlight_blink_freq = Read_M95010_W_EEPROM(EE_flashlight_blink_Hz);
 
 	LCD_init(Read_M95010_W_EEPROM(EE_contrast));//15
 	LCD_send_cmd(CMD_display_all_points_on);	//LCD test, meg amúgy is felvillan egy kicsit induláskor, és az nem néz ki túl jól

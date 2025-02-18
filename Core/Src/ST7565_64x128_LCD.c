@@ -128,7 +128,7 @@ void LCD_init(uint8_t contrast)
 	delete_RAM();
 
 	LL_TIM_OC_SetCompareCH1(TIM15, Read_M95010_W_EEPROM(EE_PWM_duty_backlight) );
-	if( saved_bits & backlight_EN )	{ LL_TIM_EnableCounter(TIM15); LL_TIM_CC_EnableChannel(TIM15, LL_TIM_CHANNEL_CH1);}	else{}
+	if( saved_bits & backlight_EN )	{ LL_TIM_CC_EnableChannel(TIM15, LL_TIM_CHANNEL_CH1);}	else{}
 	__enable_irq();
 }
 

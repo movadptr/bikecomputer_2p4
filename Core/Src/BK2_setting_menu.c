@@ -26,7 +26,7 @@ extern volatile uint8_t saved_bits;
 extern volatile uint8_t system_bits;
 extern constant uint8_t bmp_wrench[64];
 extern constant uint8_t bmp_gamecontroller[92];
-
+extern volatile uint8_t flashlight_blink_freq;
 
 extern float calcSTM32temp(uint16_t rawtemp);
 uint8_t choose_row(uint8_t num_of_rows, uint8_t start_from_row);
@@ -73,11 +73,16 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 		switch(menu_row_layer_0)
 		{
 			case 10: {
+						uint8_t freq = Read_M95010_W_EEPROM(EE_flashlight_blink_Hz);
+
 						write_text_V(0, 120, "Flashlight",Pixel_on, size_5x8);
 						if(system_bits & flashlight_EN)		{ write_text_V(2, 102, "Light on", Pixel_on, size_5x8);}
 						else								{ write_text_V(2, 102, "Light off", Pixel_on, size_5x8);}
 						if(system_bits & flashlight_blink) 	{ write_text_V(2, 92, "Blink on", Pixel_on, size_5x8);}
 						else								{ write_text_V(2, 92, "Blink off", Pixel_on, size_5x8);}
+						write_text_V(2, 82, "BlFr",Pixel_on, size_5x8);
+						write_text_V(50, 82, "Hz",Pixel_on, size_5x8);
+						write_dec_num_int16_t_V(48, 82, freq, Pixel_on, size_5x8, ALIGN_RIGHT);
 						draw_rectangle_xy_height_width( 0, 100, 11, 64, Pixel_on);
 						print_disp_mat();
 
@@ -87,8 +92,15 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 							fill_rectangle_xy_height_width(56, 92, 7, 5, Pixel_off);
 							print_disp_mat();
 
-							menu_row_layer_1 = choose_row(1, menu_row_layer_1);
-							if(btn == exitgomb)	{ break;} else{}
+							menu_row_layer_1 = choose_row(2, menu_row_layer_1);
+							if(btn == exitgomb)
+							{
+								if(Read_M95010_W_EEPROM(EE_flashlight_blink_Hz) != freq)
+								{
+									Write_M95010_W_EEPROM(EE_flashlight_blink_Hz, freq);
+								}
+								break;
+							} else{}
 
 							tim_delay_ms(menu_delaytime);
 							btn=0;
@@ -115,17 +127,47 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 											{
 												system_bits &= ~flashlight_blink;
 												write_text_V(2, 92, "Blink off", Pixel_on, size_5x8);
-												if(system_bits & flashlight_EN)
+												LL_TIM_CC_DisableChannel(TIM15, LL_TIM_CHANNEL_CH2);
+												LL_TIM_DisableIT_CC2(TIM15);
+												if(system_bits & flashlight_EN)//ne maradjon esetlegesen kikapcsolva ha amúgy az enable megvan
 												{
 													LL_GPIO_SetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
-												}else{}
+												}
+												else
+												{
+													LL_GPIO_ResetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
+												}
 											}
 											else
 											{
 												system_bits |= flashlight_blink;
 												write_text_V(2, 92, "Blink on", Pixel_on, size_5x8);
+												LL_TIM_CC_EnableChannel(TIM15, LL_TIM_CHANNEL_CH2);
+												LL_TIM_EnableIT_CC2(TIM15);
 											}
 											break;
+
+								case 8:	while(1)
+										{
+											if( (btn == jobbgomb) && (freq < 100) )//értéket növel
+											{
+												fill_rectangle_xy_height_width(41, 82, 7, 18, Pixel_off);//shit TODO fix
+												freq++;
+												write_dec_num_int16_t_V(48, 82, freq, Pixel_on, size_5x8, ALIGN_RIGHT);
+												print_disp_mat();
+												tim_delay_ms(menu_delaytime_fast);
+											}	else{}
+											if((btn == balgomb) && (freq > 1 ))//értéket csökkent
+											{
+												fill_rectangle_xy_height_width(41, 82, 7, 18, Pixel_off);//shit TODO fix
+												freq--;
+												write_dec_num_int16_t_V(48, 82, freq, Pixel_on, size_5x8, ALIGN_RIGHT);
+												print_disp_mat();
+												tim_delay_ms(menu_delaytime_fast);
+											}	else{}
+											if(btn == entergomb)	{ flashlight_blink_freq = freq; break;}	else{} //értéket elfogad
+										}
+										break;
 							}
 						}
 						break;
@@ -165,7 +207,7 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 
 							switch(menu_row_layer_1)
 							{
-								case 10:	while(1)//choose hour
+								case 10: while(1)//choose hour
 										{
 											if( (btn == jobbgomb) && (RTCtime.Hours<23) )//értéket növel
 											{
@@ -612,13 +654,11 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 											saved_bits &= ~backlight_EN;
 											write_text_V(39, 92, "OFF", Pixel_on, size_5x8);
 											LL_TIM_CC_DisableChannel(TIM15, LL_TIM_CHANNEL_CH1);
-											LL_TIM_DisableCounter(TIM15);
 										}
 										else
 										{
 											saved_bits |= backlight_EN;
 											write_text_V(39, 92, "ON", Pixel_on,size_5x8);
-											LL_TIM_EnableCounter(TIM15);
 											LL_TIM_CC_EnableChannel(TIM15, LL_TIM_CHANNEL_CH1);
 										}
 										Write_M95010_W_EEPROM(EE_bitek, saved_bits);

@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "ST7565_64x128_LCD.h"
 #include "disp_fgv.h"
+#include "math.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -71,6 +72,8 @@ extern volatile uint8_t Tgame_status;
 volatile float prev_v = 0, curr_v = 0;//previous and current velocity in m/s
 
 volatile uint8_t flashlight_toggle_cnt = 0;
+extern volatile uint8_t flashlight_blink_freq;
+
 
 void (*GameMainIsrPntr)() = NULL;
 void (*GameBtnIsrPntr)() = NULL;
@@ -325,6 +328,33 @@ void EXTI9_5_IRQHandler(void)
   } else{}
 #endif
   /* USER CODE END EXTI9_5_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM1 break interrupt and TIM15 global interrupt.
+  */
+void TIM1_BRK_TIM15_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM1_BRK_TIM15_IRQn 0 */
+	if(LL_TIM_IsActiveFlag_CC2(TIM15))
+	{
+		LL_TIM_ClearFlag_CC2(TIM15);
+		flashlight_toggle_cnt++;
+		uint8_t tmp = ceil(1/(float)(101.0f-flashlight_blink_freq))*100;//shit TODO fix
+		if(tmp==flashlight_toggle_cnt)
+		{
+			LL_GPIO_TogglePin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
+			flashlight_toggle_cnt=0;
+		}
+		else
+		{
+
+		}
+	}
+  /* USER CODE END TIM1_BRK_TIM15_IRQn 0 */
+  /* USER CODE BEGIN TIM1_BRK_TIM15_IRQn 1 */
+
+  /* USER CODE END TIM1_BRK_TIM15_IRQn 1 */
 }
 
 /**

@@ -241,6 +241,7 @@ void Tgame_main_isr();
 #define EE_RTC_smcalH				0x0012//
 
 #define EE_contrast					0x0013
+#define EE_flashlight_blink_Hz		0x0014
 ////////////////////////////////////////////////////////
 
 //bit masks for saved bits
@@ -260,8 +261,6 @@ void Tgame_main_isr();
 #define flashlight_EN					0x04U
 #define flashlight_blink				0x08U
 ////////////////////////////////////////////////////////
-
-#define flashlight_toggle_trig_val		250U
 
 /* USER CODE END Private defines */
 
