@@ -72,7 +72,7 @@ extern volatile uint8_t Tgame_status;
 volatile float prev_v = 0, curr_v = 0;//previous and current velocity in m/s
 
 volatile uint8_t flashlight_toggle_cnt = 0;
-extern volatile uint8_t flashlight_blink_freq;
+extern volatile uint8_t flashlight_blink_val;
 
 
 void (*GameMainIsrPntr)() = NULL;
@@ -340,8 +340,7 @@ void TIM1_BRK_TIM15_IRQHandler(void)
 	{
 		LL_TIM_ClearFlag_CC2(TIM15);
 		flashlight_toggle_cnt++;
-		uint8_t tmp = ceil(((1/(float)flashlight_blink_freq)/2)/TIM15_period);
-		if(tmp==flashlight_toggle_cnt)
+		if(flashlight_blink_val==flashlight_toggle_cnt)
 		{
 			LL_GPIO_TogglePin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
 			flashlight_toggle_cnt=0;

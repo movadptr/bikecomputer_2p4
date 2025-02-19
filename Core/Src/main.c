@@ -79,7 +79,7 @@ capturedata cpt2={0};
 lap l1={0}, l2={0}, l3={0};
 lap_tmp ltmp={0};
 
-volatile uint8_t flashlight_blink_freq = 0;
+volatile uint8_t flashlight_blink_val = 0;
 
 /* USER CODE END PV */
 
@@ -1281,7 +1281,7 @@ static void init(void)
 		if(tmp & (~((1<<BP0) | (1<<BP1))))	{ Write_SREG_M95010_W_EEPROM( tmp & (~((1<<BP0) | (1<<BP1))) );}	else{}
 	}
 	saved_bits = Read_M95010_W_EEPROM(EE_bitek);
-	flashlight_blink_freq = Read_M95010_W_EEPROM(EE_flashlight_blink_Hz);
+	flashlight_blink_val = Read_M95010_W_EEPROM(EE_flashlight_blink);
 
 	LCD_init(Read_M95010_W_EEPROM(EE_contrast));//15
 	LCD_send_cmd(CMD_display_all_points_on);	//LCD test, meg amúgy is felvillan egy kicsit induláskor, és az nem néz ki túl jól

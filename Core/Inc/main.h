@@ -241,7 +241,7 @@ void Tgame_main_isr();
 #define EE_RTC_smcalH				0x0012//
 
 #define EE_contrast					0x0013
-#define EE_flashlight_blink_Hz		0x0014
+#define EE_flashlight_blink			0x0014
 ////////////////////////////////////////////////////////
 
 //bit masks for saved bits

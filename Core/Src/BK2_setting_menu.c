@@ -26,7 +26,7 @@ extern volatile uint8_t saved_bits;
 extern volatile uint8_t system_bits;
 extern constant uint8_t bmp_wrench[64];
 extern constant uint8_t bmp_gamecontroller[92];
-extern volatile uint8_t flashlight_blink_freq;
+extern volatile uint8_t flashlight_blink_val;
 
 extern float calcSTM32temp(uint16_t rawtemp);
 uint8_t choose_row(uint8_t num_of_rows, uint8_t start_from_row);
@@ -73,52 +73,51 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 		switch(menu_row_layer_0)
 		{
 			case 10: {
-						uint8_t freq = Read_M95010_W_EEPROM(EE_flashlight_blink_Hz);
+						uint8_t tmp = Read_M95010_W_EEPROM(EE_flashlight_blink);
 
 						write_text_V(0, 120, "Flashlight",Pixel_on, size_5x8);
 						if(system_bits & flashlight_EN)		{ write_text_V(2, 102, "Light on", Pixel_on, size_5x8);}
 						else								{ write_text_V(2, 102, "Light off", Pixel_on, size_5x8);}
 						if(system_bits & flashlight_blink) 	{ write_text_V(2, 92, "Blink on", Pixel_on, size_5x8);}
 						else								{ write_text_V(2, 92, "Blink off", Pixel_on, size_5x8);}
-						write_text_V(2, 82, "BlFr",Pixel_on, size_5x8);
+						write_text_V(2, 82, "BFr",Pixel_on, size_5x8);
 						write_text_V(50, 82, "Hz",Pixel_on, size_5x8);
-						write_dec_num_int16_t_V(48, 82, freq, Pixel_on, size_5x8, ALIGN_RIGHT);
+						write_dec_num_float_V(36, 82, (1/(TIM15_period*2*tmp)), 2, Pixel_on, size_5x8);
 						draw_rectangle_xy_height_width( 0, 100, 11, 64, Pixel_on);
 						print_disp_mat();
 
 						for(menu_row_layer_1 = 10;;)
 						{
-							fill_rectangle_xy_height_width(56, 102, 7, 5, Pixel_off);
-							fill_rectangle_xy_height_width(56, 92, 7, 5, Pixel_off);
-							print_disp_mat();
-
 							menu_row_layer_1 = choose_row(2, menu_row_layer_1);
 							if(btn == exitgomb)
 							{
-								if(Read_M95010_W_EEPROM(EE_flashlight_blink_Hz) != freq)
+								if(Read_M95010_W_EEPROM(EE_flashlight_blink) != tmp)
 								{
-									Write_M95010_W_EEPROM(EE_flashlight_blink_Hz, freq);
+									Write_M95010_W_EEPROM(EE_flashlight_blink, tmp);
 								}
 								break;
-							} else{}
-
-							tim_delay_ms(menu_delaytime);
-							btn=0;
-							fill_rectangle_xy_height_width( 2, (menu_row_layer_1*10)+1, 9, 61, Pixel_off);
+							}
+							else{btn=0;}
 
 							switch(menu_row_layer_1)
 							{
 								case 10:	if(system_bits & flashlight_EN)
 											{
 												system_bits &= ~flashlight_EN;
+												fill_rectangle_xy_height_width(2, 102, 7, 50, Pixel_off);
 												write_text_V(2, 102, "Light off", Pixel_on, size_5x8);
 												LL_GPIO_ResetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
+												print_disp_mat();
+												tim_delay_ms(menu_delaytime_fast);
 											}
 											else
 											{
 												system_bits |= flashlight_EN;
+												fill_rectangle_xy_height_width(2, 102, 7, 50, Pixel_off);
 												write_text_V(2, 102, "Light on", Pixel_on, size_5x8);
 												LL_GPIO_SetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
+												print_disp_mat();
+												tim_delay_ms(menu_delaytime_fast);
 											}
 											//todo light sense mode: be lehetne kapcsolni hogy ha túl sötét van akkor automatikusan ráadja a Flashlightot; ADC9 csatornára kötött piros SMD led az érzékelő
 											break;
@@ -126,9 +125,11 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 								case 9:		if(system_bits & flashlight_blink)
 											{
 												system_bits &= ~flashlight_blink;
+												fill_rectangle_xy_height_width(2, 92, 7, 45, Pixel_off);
 												write_text_V(2, 92, "Blink off", Pixel_on, size_5x8);
 												LL_TIM_CC_DisableChannel(TIM15, LL_TIM_CHANNEL_CH2);
 												LL_TIM_DisableIT_CC2(TIM15);
+												print_disp_mat();
 												if(system_bits & flashlight_EN)//ne maradjon esetlegesen kikapcsolva ha amúgy az enable megvan
 												{
 													LL_GPIO_SetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
@@ -137,35 +138,39 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 												{
 													LL_GPIO_ResetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
 												}
+												tim_delay_ms(menu_delaytime_fast);
 											}
 											else
 											{
 												system_bits |= flashlight_blink;
+												fill_rectangle_xy_height_width(2, 92, 7, 45, Pixel_off);
 												write_text_V(2, 92, "Blink on", Pixel_on, size_5x8);
 												LL_TIM_CC_EnableChannel(TIM15, LL_TIM_CHANNEL_CH2);
 												LL_TIM_EnableIT_CC2(TIM15);
+												print_disp_mat();
+												tim_delay_ms(menu_delaytime_fast);
 											}
 											break;
 
 								case 8:	while(1)
 										{
-											if( (btn == jobbgomb) && (freq < 100) )//értéket növel
+											if( (btn == balgomb) && (tmp < 100) )
 											{
-												fill_rectangle_xy_height_width(41, 82, 7, 18, Pixel_off);//shit TODO fix
-												freq++;
-												write_dec_num_int16_t_V(48, 82, freq, Pixel_on, size_5x8, ALIGN_RIGHT);
+												fill_rectangle_xy_height_width(20, 82, 7, 30, Pixel_off);
+												tmp++;
+												write_dec_num_float_V(36, 82, (1/(TIM15_period*2*tmp)), 2, Pixel_on, size_5x8);
 												print_disp_mat();
 												tim_delay_ms(menu_delaytime_fast);
 											}	else{}
-											if((btn == balgomb) && (freq > 1 ))//értéket csökkent
+											if((btn == jobbgomb) && (tmp > 1 ))
 											{
-												fill_rectangle_xy_height_width(41, 82, 7, 18, Pixel_off);//shit TODO fix
-												freq--;
-												write_dec_num_int16_t_V(48, 82, freq, Pixel_on, size_5x8, ALIGN_RIGHT);
+												fill_rectangle_xy_height_width(20, 82, 7, 30, Pixel_off);
+												tmp--;
+												write_dec_num_float_V(36, 82, (1/(TIM15_period*2*tmp)), 2, Pixel_on, size_5x8);
 												print_disp_mat();
 												tim_delay_ms(menu_delaytime_fast);
 											}	else{}
-											if(btn == entergomb)	{ flashlight_blink_freq = freq; break;}	else{} //értéket elfogad
+											if(btn == entergomb)	{ flashlight_blink_val = tmp; break;}	else{} //értéket elfogad
 										}
 										break;
 							}
