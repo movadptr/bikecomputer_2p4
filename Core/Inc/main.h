@@ -216,7 +216,7 @@ void Tgame_main_isr();
 #define timtick			25e-9F	// 24Mhz/előosztó
 #define timAR			80000000UL//a timer counter hossza
 #define temperature_calib_val	0.0F//-1.0F
-
+#define TIM15_period		5e-3F//5ms timer 15 period
 
 ///////EEPROM addresses/////////////////////////////////
 #define EE_PWM_duty_backlight		0x0001
