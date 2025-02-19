@@ -340,16 +340,13 @@ void TIM1_BRK_TIM15_IRQHandler(void)
 	{
 		LL_TIM_ClearFlag_CC2(TIM15);
 		flashlight_toggle_cnt++;
-		uint8_t tmp = ceil(1/(float)(101.0f-flashlight_blink_freq))*100;//shit TODO fix
+		uint8_t tmp = ceil(((1/(float)flashlight_blink_freq)/2)/TIM15_period);
 		if(tmp==flashlight_toggle_cnt)
 		{
 			LL_GPIO_TogglePin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
 			flashlight_toggle_cnt=0;
 		}
-		else
-		{
-
-		}
+		else{}
 	}
   /* USER CODE END TIM1_BRK_TIM15_IRQn 0 */
   /* USER CODE BEGIN TIM1_BRK_TIM15_IRQn 1 */
