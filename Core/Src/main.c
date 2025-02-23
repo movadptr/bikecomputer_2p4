@@ -18,7 +18,7 @@
   *  TIM2 - speed, cadence
   *  TIM6 - nonblocking ms timer
   *  TIM15 - PWM backlight
-  *  TODO TIM ? - game
+  *  TIM16 - game
   *
   *
   *
