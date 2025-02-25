@@ -36,14 +36,14 @@ extern "C" {
 
 /* Exported variables --------------------------------------------------------*/
 /* Exported defines ----------------------------------------------------------*/
-extern TIM_HandleTypeDef htim15;
-#define BSP_IP_TIM_HANDLE htim15
-#define BSP_IP_TIM_INIT MX_TIM15_Init
+//extern TIM_HandleTypeDef htim15;
+//#define BSP_IP_TIM_HANDLE htim15
+//#define BSP_IP_TIM_INIT MX_TIM15_Init
 
 #define BSP_IP_MEMS_INT1_PIN_NUM GPIO_PIN_2
 #define BSP_IP_MEMS_INT1_GPIOX GPIOB
 
-extern RTC_HandleTypeDef hrtc;
+//extern RTC_HandleTypeDef hrtc;
 
 #ifdef __cplusplus
 }

@@ -26,8 +26,8 @@ extern "C" {
 #include <stdio.h>
 
 #include "stm32l4xx_hal.h"
-#include "custom.h"
-#include "com.h"
+//#include "custom.h"
+//#include "com.h"
 #include "demo_serial.h"
 #include "bsp_ip_conf.h"
 #include "fw_version.h"
@@ -49,7 +49,7 @@ extern "C" {
 
 /* Public variables ----------------------------------------------------------*/
 volatile uint8_t DataLoggerActive = 0;
-volatile uint32_t SensorsEnabled = 0;
+volatile uint32_t SensorsEnabled = (ACCELEROMETER_SENSOR | GYROSCOPE_SENSOR);
 char LibVersion[35];
 int32_t LibVersionLen;
 volatile uint8_t SensorReadRequest = 0;
@@ -139,13 +139,13 @@ void MX_MEMS_Process(void)
   *              the configuration information for TIM module.
   * @retval None
   */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+/*void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   if (htim->Instance == BSP_IP_TIM_HANDLE.Instance)
   {
     SensorReadRequest = 1;
   }
-}
+}*/
 
 /* Private functions ---------------------------------------------------------*/
 /**
@@ -164,13 +164,13 @@ static void MX_DynamicInclinometer_Init(void)
 #endif
 
   /* Initialize LED */
-  BSP_LED_Init(LED2);
+  //BSP_LED_Init(LED2);
 
   /* Initialize Virtual COM Port */
-  BSP_COM_Init(COM1);
+  //BSP_COM_Init(COM1);
 
   /* Initialize Timer */
-  BSP_IP_TIM_INIT();
+  //BSP_IP_TIM_INIT();
 
   /* Configure Timer to run with desired algorithm frequency */
   TIM_Config(ALGO_FREQ);
@@ -192,12 +192,12 @@ static void MX_DynamicInclinometer_Init(void)
 
   DWT_Init();
 
-  BSP_LED_On(LED2);
-  HAL_Delay(500);
-  BSP_LED_Off(LED2);
+  //BSP_LED_On(LED2);
+  //HAL_Delay(500);
+  //BSP_LED_Off(LED2);
 
   /* Start receiving messages via DMA */
-  UART_StartReceiveMsg();
+  //UART_StartReceiveMsg();
 }
 
 /**
@@ -209,7 +209,7 @@ static void MX_DynamicInclinometer_Process(void)
   static Msg_t msg_dat;
   static Msg_t msg_cmd;
 
-  if (UART_ReceivedMSG((Msg_t *)&msg_cmd) == 1)
+  /*if (UART_ReceivedMSG((Msg_t *)&msg_cmd) == 1)
   {
     if (msg_cmd.Data[0] == DEV_ADDR)
     {
@@ -221,19 +221,19 @@ static void MX_DynamicInclinometer_Process(void)
   {
     SensorReadRequest = 0;
 
-    /* Acquire data from enabled sensors and fill Msg stream */
+    // Acquire data from enabled sensors and fill Msg stream
     RTC_Handler(&msg_dat);
     Accelero_Sensor_Handler(&msg_dat);
     Gyro_Sensor_Handler(&msg_dat);
     Magneto_Sensor_Handler(&msg_dat);
     Humidity_Sensor_Handler(&msg_dat);
     Temperature_Sensor_Handler(&msg_dat);
-    Pressure_Sensor_Handler(&msg_dat);
+    Pressure_Sensor_Handler(&msg_dat);*/
 
     /* DynamicInclinometer specific part */
     DI_Data_Handler(&msg_dat, &msg_cmd);
 
-    /* Send data stream */
+    /*//Send data stream
     INIT_STREAMING_HEADER(&msg_dat);
     msg_dat.Len = STREAMING_MSG_LENGTH;
 
@@ -258,7 +258,7 @@ static void MX_DynamicInclinometer_Process(void)
     }
 
     UART_SendMsg(&msg_dat);
-  }
+  }*/
 }
 
 /**
@@ -286,7 +286,7 @@ static void Init_Sensors(void)
   */
 static void RTC_Handler(Msg_t *Msg)
 {
-  uint8_t sub_sec = 0;
+  /*uint8_t sub_sec = 0;
   RTC_DateTypeDef sdatestructureget;
   RTC_TimeTypeDef stimestructure;
   uint32_t ans_uint32;
@@ -305,9 +305,9 @@ static void RTC_Handler(Msg_t *Msg)
     (void)HAL_RTC_GetTime(&hrtc, &stimestructure, FORMAT_BIN);
     (void)HAL_RTC_GetDate(&hrtc, &sdatestructureget, FORMAT_BIN);
 
-    /* To be MISRA C-2012 compliant the original calculation:
-       sub_sec = ((((((int)RtcSynchPrediv) - ((int)stimestructure.SubSeconds)) * 100) / (RtcSynchPrediv + 1)) & 0xFF);
-       has been split to separate expressions */
+    // To be MISRA C-2012 compliant the original calculation:
+    //   sub_sec = ((((((int)RtcSynchPrediv) - ((int)stimestructure.SubSeconds)) * 100) / (RtcSynchPrediv + 1)) & 0xFF);
+    //   has been split to separate expressions
     ans_int32 = (RtcSynchPrediv - (int32_t)stimestructure.SubSeconds) * 100;
     ans_int32 /= RtcSynchPrediv + 1;
     ans_uint32 = (uint32_t)ans_int32 & 0xFFU;
@@ -317,7 +317,7 @@ static void RTC_Handler(Msg_t *Msg)
     Msg->Data[4] = (uint8_t)stimestructure.Minutes;
     Msg->Data[5] = (uint8_t)stimestructure.Seconds;
     Msg->Data[6] = sub_sec;
-  }
+  }*/
 }
 
 /**
@@ -328,7 +328,7 @@ static void RTC_Handler(Msg_t *Msg)
   */
 static void DI_Data_Handler(Msg_t *Msg, Msg_t *Cmd)
 {
-  uint32_t         elapsed_time_us = 0U;
+  //uint32_t         elapsed_time_us = 0U;
   MDI_input_t      data_in;
   MDI_output_t     data_out;
   MDI_cal_type_t   acc_cal_mode;
@@ -354,14 +354,14 @@ static void DI_Data_Handler(Msg_t *Msg, Msg_t *Cmd)
       Timestamp += ALGO_PERIOD;
 
       /* Run Dynamic Inclinometer algorithm */
-      BSP_LED_On(LED2);
-      DWT_Start();
+      //BSP_LED_On(LED2);
+      //DWT_Start();
       MotionDI_manager_run(&data_in, &data_out);
-      elapsed_time_us = DWT_Stop();
-      BSP_LED_Off(LED2);
+      //elapsed_time_us = DWT_Stop();
+      //BSP_LED_Off(LED2);
 
       /* Check calibration mode */
-      MotionDI_get_acc_calibration_mode(&acc_cal_mode);
+      /*MotionDI_get_acc_calibration_mode(&acc_cal_mode);
       MotionDI_get_gyro_calibration_mode(&gyro_cal_mode);
 
       if (acc_cal_mode != AccCalMode)
@@ -386,7 +386,7 @@ static void DI_Data_Handler(Msg_t *Msg, Msg_t *Cmd)
         Cmd->Data[4] = (uint8_t)GyrCalMode;
         Cmd->Len = 5;
         UART_SendMsg(Cmd);
-      }
+      }*/
 
       /* Get calibration parameters */
       MotionDI_get_acc_calibration(&acc_cal);
@@ -410,7 +410,7 @@ static void DI_Data_Handler(Msg_t *Msg, Msg_t *Cmd)
 
 
 
-      (void)memcpy(&Msg->Data[55], (void *)data_out.quaternion, 4U * sizeof(float));
+      /*(void)memcpy(&Msg->Data[55], (void *)data_out.quaternion, 4U * sizeof(float));
       (void)memcpy(&Msg->Data[71], (void *)data_out.rotation, 3U * sizeof(float));
       (void)memcpy(&Msg->Data[83], (void *)data_out.gravity, 3U * sizeof(float));
       (void)memcpy(&Msg->Data[95], (void *)data_out.linear_acceleration, 3U * sizeof(float));
@@ -424,7 +424,7 @@ static void DI_Data_Handler(Msg_t *Msg, Msg_t *Cmd)
       (void)memcpy(&Msg->Data[132], (void *)gyro_cal.Bias, 3U * sizeof(float));
       Msg->Data[144] = (uint8_t)gyro_cal.CalQuality;
 
-      Serialize_s32(&Msg->Data[145], (int32_t)elapsed_time_us, 4);
+      Serialize_s32(&Msg->Data[145], (int32_t)elapsed_time_us, 4);*/
     }
   }
 }
@@ -580,15 +580,15 @@ static void Humidity_Sensor_Handler(Msg_t *Msg)
   */
 static void TIM_Config(uint32_t Freq)
 {
-  uint32_t tim_counter_clock;
+  /*uint32_t tim_counter_clock;
 
   if (SystemCoreClock > 120000000)
   {
-    tim_counter_clock = 4000; /* TIM counter clock 4 kHz */
+    tim_counter_clock = 4000; // TIM counter clock 4 kHz
   }
   else
   {
-    tim_counter_clock = 2000; /* TIM counter clock 2 kHz */
+    tim_counter_clock = 2000; // TIM counter clock 2 kHz
   }
   uint32_t prescaler_value = (uint32_t)((SystemCoreClock / tim_counter_clock) - 1);
   uint32_t period = (tim_counter_clock / Freq) - 1;
@@ -601,7 +601,7 @@ static void TIM_Config(uint32_t Freq)
   if (HAL_TIM_Base_Init(&BSP_IP_TIM_HANDLE) != HAL_OK)
   {
     Error_Handler();
-  }
+  }*/
 }
 
 #ifdef BSP_IP_MEMS_INT1_PIN_NUM

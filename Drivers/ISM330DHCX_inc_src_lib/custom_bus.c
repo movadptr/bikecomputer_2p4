@@ -38,7 +38,7 @@ __weak HAL_StatusTypeDef MX_SPI1_Init(SPI_HandleTypeDef* hspi);
   * @{
   */
 
-SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi1;
 /**
   * @}
   */
