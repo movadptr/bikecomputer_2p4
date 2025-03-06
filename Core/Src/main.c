@@ -15,6 +15,7 @@
   *
   ******************************************************************************
   *
+  *  TIM1 - IMU
   *  TIM2 - speed, cadence
   *  TIM6 - nonblocking ms timer
   *  TIM15 - PWM backlight
@@ -1085,16 +1086,41 @@ void pwr_down(void)
 
 	LL_mDelay(200);//várunk hogy a gomb esetleges pergése, vagy rosszkori elengedése miatt megjövő interrupt ne rontsa el a sleepet
 
+	LL_TIM_CC_DisableChannel(TIM1, LL_TIM_CHANNEL_CH1);
+	LL_TIM_DisableCounter(TIM1);
+
 	LL_TIM_CC_DisableChannel(TIM2, LL_TIM_CHANNEL_CH1);
 	LL_TIM_CC_DisableChannel(TIM2, LL_TIM_CHANNEL_CH2);
 	LL_TIM_CC_DisableChannel(TIM2, LL_TIM_CHANNEL_CH3);
+	LL_TIM_DisableCounter(TIM2);
+
+	LL_TIM_DisableCounter(TIM15);
+	LL_TIM_DisableCounter(TIM16);
+
 	NVIC_DisableIRQ(RTC_Alarm_IRQn);//not to trigger interrupt after sending to sleep the LCD
 	LL_RTC_DisableWriteProtection(RTC);
 	LL_RTC_ALMA_Disable(RTC);//ne keltse fel az rtc
 	LL_RTC_EnableWriteProtection(RTC);
 
 	LCD_sleep();
+
+	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts
+	EXTI->PR2 = 0x00000078;//clear pending interrupts
+	/*uint8_t tmp_reg = 0;
+	ism330dhcx_read_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL7_G, &tmp_reg, 1);
+	tmp_reg |= 0x80;
+	ism330dhcx_write_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL7_G, &tmp_reg, 1);
+
+	ism330dhcx_read_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL1_XL, &tmp_reg, 1);
+	tmp_reg &= 0x0f;
+	ism330dhcx_write_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL1_XL, &tmp_reg, 1);
+
+	ism330dhcx_read_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL2_G, &tmp_reg, 1);
+	tmp_reg &= 0x0f;
+	ism330dhcx_write_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL2_G, &tmp_reg, 1);
+	*/
 	ISM330DHCX_DeInit(MotionCompObj[CUSTOM_ISM330DHCX_0]);
+
 
 	__disable_irq();
 	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts
