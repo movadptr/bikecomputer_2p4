@@ -180,7 +180,7 @@ static void MX_DynamicInclinometer_Init(void)
 
 #ifdef BSP_IP_MEMS_INT1_PIN_NUM
   /* Initialize MEMS INT1 pin back to it's default state after I3C disable / I2C enable */
-  MEMS_INT1_Init();
+  //MEMS_INT1_Init();
 #endif
 
   /* DynamicInclinometer API initialization function */
@@ -190,7 +190,7 @@ static void MX_DynamicInclinometer_Init(void)
   /* Get library version */
   MotionDI_manager_get_version(LibVersion, &LibVersionLen);
 
-  DWT_Init();
+  //DWT_Init();
 
   //BSP_LED_On(LED2);
   //HAL_Delay(500);
@@ -220,17 +220,17 @@ static void MX_DynamicInclinometer_Process(void)
   if (SensorReadRequest == 1U)
   {
     SensorReadRequest = 0;
-
+*/
     // Acquire data from enabled sensors and fill Msg stream
-    RTC_Handler(&msg_dat);
+    //RTC_Handler(&msg_dat);
     Accelero_Sensor_Handler(&msg_dat);
     Gyro_Sensor_Handler(&msg_dat);
-    Magneto_Sensor_Handler(&msg_dat);
-    Humidity_Sensor_Handler(&msg_dat);
+    //Magneto_Sensor_Handler(&msg_dat);
+    //Humidity_Sensor_Handler(&msg_dat);
     Temperature_Sensor_Handler(&msg_dat);
-    Pressure_Sensor_Handler(&msg_dat);*/
+    //Pressure_Sensor_Handler(&msg_dat);
 
-    /* DynamicInclinometer specific part */
+    // DynamicInclinometer specific part
     DI_Data_Handler(&msg_dat, &msg_cmd);
 
     /*//Send data stream
@@ -270,10 +270,10 @@ static void Init_Sensors(void)
 {
   BSP_SENSOR_ACC_Init();
   BSP_SENSOR_GYR_Init();
-  BSP_SENSOR_MAG_Init();
-  BSP_SENSOR_PRESS_Init();
-  BSP_SENSOR_TEMP_Init();
-  BSP_SENSOR_HUM_Init();
+  //BSP_SENSOR_MAG_Init();
+  //BSP_SENSOR_PRESS_Init();
+  //BSP_SENSOR_TEMP_Init();
+  //BSP_SENSOR_HUM_Init();
 
   BSP_SENSOR_ACC_SetOutputDataRate(ACC_ODR);
   BSP_SENSOR_ACC_SetFullScale(ACC_FS);
@@ -331,8 +331,8 @@ static void DI_Data_Handler(Msg_t *Msg, Msg_t *Cmd)
   //uint32_t         elapsed_time_us = 0U;
   MDI_input_t      data_in;
   MDI_output_t     data_out;
-  MDI_cal_type_t   acc_cal_mode;
-  MDI_cal_type_t   gyro_cal_mode;
+  //MDI_cal_type_t   acc_cal_mode;
+  //MDI_cal_type_t   gyro_cal_mode;
   MDI_cal_output_t acc_cal;
   MDI_cal_output_t gyro_cal;
 

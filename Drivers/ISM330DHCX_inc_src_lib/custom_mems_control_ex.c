@@ -235,9 +235,9 @@ void BSP_SENSOR_ACC_GetOrientation(char *Orientation)
 {
 #if (defined BSP_MOTION_SENSORS || defined BSP_HYBRID_SENSORS)
 #ifdef CUSTOM_ACC_INSTANCE_0
-    Orientation[0] = 's';
-    Orientation[1] = 'e';
-    Orientation[2] = 'u';
+    Orientation[0] = 'e';//x //east
+    Orientation[1] = 'n';//y //north
+    Orientation[2] = 'd';//z //down
 #endif
 #endif
 }
@@ -253,9 +253,9 @@ void BSP_SENSOR_GYR_GetOrientation(char *Orientation)
 {
 #if (defined BSP_MOTION_SENSORS)
 #ifdef CUSTOM_GYR_INSTANCE_0
-    Orientation[0] = 's';
-    Orientation[1] = 'e';
-    Orientation[2] = 'u';
+    Orientation[0] = 'e';//x
+    Orientation[1] = 'n';//y
+    Orientation[2] = 'd';//z
 #endif
 #endif
 }

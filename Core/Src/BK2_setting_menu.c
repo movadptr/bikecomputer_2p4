@@ -16,6 +16,7 @@
 #include "disp_fgv.h"
 #include "ST7565_64x128_LCD.h"
 #include "M95010_W_EEPROM.h"
+#include "motion_di.h"
 
 extern volatile uint8_t btn;
 extern volatile float curr_tyre;//kerület m-ben
@@ -27,6 +28,8 @@ extern volatile uint8_t system_bits;
 extern constant uint8_t bmp_wrench[64];
 extern constant uint8_t bmp_gamecontroller[92];
 extern volatile uint8_t flashlight_blink_val;
+
+extern float Grotation[MDI_NUM_AXES];
 
 extern float calcSTM32temp(uint16_t rawtemp);
 uint8_t choose_row(uint8_t num_of_rows, uint8_t start_from_row);
@@ -838,12 +841,12 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 							write_dec_num_int16_t_V(63, 70, alldata.rawlight, Pixel_on, size_5x8, ALIGN_RIGHT);
 
 							//TODO read_acc_values();
-							write_text_V(0, 60, "rawX", Pixel_on, size_5x8);
-							//write_dec_num_int16_t_V(63, 60, accdata[0], Pixel_on, size_5x8, ALIGN_RIGHT);
-							write_text_V(0, 50, "rawY", Pixel_on, size_5x8);
-							//write_dec_num_int16_t_V(63, 50, accdata[1], Pixel_on, size_5x8, ALIGN_RIGHT);
-							write_text_V(0, 40, "rawZ", Pixel_on, size_5x8);
-							//write_dec_num_int16_t_V(63, 40, accdata[2], Pixel_on, size_5x8, ALIGN_RIGHT);
+							write_text_V(0, 60, "yaw", Pixel_on, size_5x8);
+							write_dec_num_float_V(45, 60, Grotation[0], 2, Pixel_on, size_5x8);
+							write_text_V(0, 50, "pitch", Pixel_on, size_5x8);
+							write_dec_num_float_V(45, 50, Grotation[1], 2, Pixel_on, size_5x8);
+							write_text_V(0, 40, "roll", Pixel_on, size_5x8);
+							write_dec_num_float_V(45, 40, Grotation[2], 2, Pixel_on, size_5x8);
 
 							//TODO alldata.acc_tempsensor = (((float)read_acc_temperature() / 10) + temperature_calib_val);
 							write_text_V(0, 30, "CPU_T", Pixel_on, size_5x8);
@@ -861,6 +864,7 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 
 							print_disp_mat();
 							tim_delay_ms(200);
+
 						}
 						break;
 

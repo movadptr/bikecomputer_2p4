@@ -25,6 +25,7 @@
 #include "ST7565_64x128_LCD.h"
 #include "disp_fgv.h"
 #include "math.h"
+#include "app_mems.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -243,9 +244,9 @@ void DMA1_Channel1_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
 	if(LL_DMA_IsActiveFlag_TC1(DMA1))
 	{
-		//LL_DMA_ClearFlag_TC1(DMA1);
-		//LL_DMA_ClearFlag_HT1(DMA1);
-		LL_DMA_ClearFlag_GI1(DMA1);
+		LL_DMA_ClearFlag_TC1(DMA1);
+		LL_DMA_ClearFlag_HT1(DMA1);
+		//LL_DMA_ClearFlag_GI1(DMA1);
 
 		alldata.rawbatt = adc_conv_results[0];
 		alldata.rawlight = adc_conv_results[1];
@@ -253,8 +254,6 @@ void DMA1_Channel1_IRQHandler(void)
 		alldata.rawtempsensor = adc_conv_results[3];
 
 		calculate_batt_voltage(adc_conv_results[0], adc_conv_results[2]);
-
-		LL_GPIO_TogglePin(D_LED_GPIO_Port, D_LED_Pin);
 	}
 
 	if(LL_ADC_IsActiveFlag_EOS(ADC1))

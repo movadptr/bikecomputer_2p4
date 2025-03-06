@@ -38,6 +38,8 @@
 
 #include "motion_di.h"
 #include "app_mems.h"
+#include "ism330dhcx.h"
+#include "custom_motion_sensors.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,7 +58,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-
+CRC_HandleTypeDef hcrc;
 SPI_HandleTypeDef hspi1;
 
 /* USER CODE BEGIN PV */
@@ -84,6 +86,7 @@ lap_tmp ltmp={0};
 
 volatile uint8_t flashlight_blink_val = 0;
 
+extern void *MotionCompObj[CUSTOM_MOTION_INSTANCES_NBR];
 float Grotation[MDI_NUM_AXES];
 
 /* USER CODE END PV */
@@ -92,7 +95,8 @@ float Grotation[MDI_NUM_AXES];
 
 static void MX_GPIO_Init(void);
 static void MX_RNG_Init(void);
-static void MX_SPI1_Init(void);
+static void MX_CRC_Init(void);
+static void SPI1_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
@@ -146,7 +150,8 @@ int main(void)
 
   MX_RNG_Init();
 
-  MX_SPI1_Init();
+  MX_CRC_Init();
+  SPI1_Init();
 
   MX_ADC1_Init();
 
@@ -191,11 +196,9 @@ int main(void)
 
 		while(btn == 0x00)//amíg nem nyomok semmit itt ciklik
 		{
-			//TODO
-			/*NVIC_DisableIRQ(SysTick_IRQn);
-			HAL_PWR_EnterSLEEPMode(PWR_LOWPOWERREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+			NVIC_DisableIRQ(SysTick_IRQn);
+			HAL_PWR_EnterSTOPMode(/*PWR_MAINREGULATOR_ON*/PWR_LOWPOWERREGULATOR_ON, PWR_SLEEPENTRY_WFI);
 			NVIC_EnableIRQ(SysTick_IRQn);
-			*/
 			__NOP();
 		}
 
@@ -299,11 +302,11 @@ int main(void)
 						{
 							if(d==10)
 							{
-								tim_delay_ms(150);//késleltetés hogy az utolsó kirajzolt csíkrészlet is látható legyen
+								tim_delay_ms(50);//késleltetés hogy az utolsó kirajzolt csíkrészlet is látható legyen
 								pwr_down();
 							} else{}
 							draw_line_x(1, 1+((d+1)*6), 60, Pixel_on);//futó csík
-							tim_delay_ms(100);
+							tim_delay_ms(50);
 							print_disp_mat();
 							if(btn != entergomb)
 							{
@@ -355,7 +358,7 @@ static void MX_TIM1_Init(void)
   /* USER CODE BEGIN TIM1_Init 1 */
   	  //runs with 2kHz interrupt freq
   /* USER CODE END TIM1_Init 1 */
-  TIM_InitStruct.Prescaler = 0;
+  TIM_InitStruct.Prescaler = 20;
   TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
   TIM_InitStruct.Autoreload = 20000;
   TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
@@ -542,6 +545,38 @@ static void DMA_Init(void)
   NVIC_SetPriority(DMA1_Channel1_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
   NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 }
+
+/**
+  * @brief CRC Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_CRC_Init(void)
+{
+
+  /* USER CODE BEGIN CRC_Init 0 */
+
+  /* USER CODE END CRC_Init 0 */
+
+  /* USER CODE BEGIN CRC_Init 1 */
+
+  /* USER CODE END CRC_Init 1 */
+  hcrc.Instance = CRC;
+  hcrc.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_ENABLE;
+  hcrc.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_ENABLE;
+  hcrc.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
+  hcrc.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
+  hcrc.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
+  if (HAL_CRC_Init(&hcrc) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN CRC_Init 2 */
+
+  /* USER CODE END CRC_Init 2 */
+
+}
+
 /**
   * @brief RNG Initialization Function
   * @param None
@@ -572,7 +607,7 @@ static void MX_RNG_Init(void)
   * @param None
   * @retval None
   */
-static void MX_SPI1_Init(void)
+static void SPI1_Init(void)
 {
 
   /* USER CODE BEGIN SPI1_Init 0 */
@@ -1059,6 +1094,7 @@ void pwr_down(void)
 	LL_RTC_EnableWriteProtection(RTC);
 
 	LCD_sleep();
+	ISM330DHCX_DeInit(MotionCompObj[CUSTOM_ISM330DHCX_0]);
 
 	__disable_irq();
 	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts
@@ -1372,6 +1408,7 @@ static void init(void)
 
 	LL_TIM_EnableCounter(TIM1);
 	LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH1);
+	LL_TIM_EnableUpdateEvent(TIM1);
 	LL_TIM_EnableIT_CC1(TIM1);
 
 	LL_TIM_EnableCounter(TIM2);
@@ -1414,7 +1451,7 @@ static void init(void)
 	__disable_irq();
 
 	LL_RCC_EnableRTC();//Peripheral clock enable
-	NVIC_SetPriority(RTC_Alarm_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+	NVIC_SetPriority(RTC_Alarm_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),1, 0));
 	NVIC_EnableIRQ(RTC_Alarm_IRQn);
 
 	LL_RTC_DisableWriteProtection(RTC);
@@ -1514,6 +1551,7 @@ void ClockConfig(void)
 		Error_Handler();
 	}
 
+	__HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_HSI);//when waking up from stop mode, use HSI oscillator not MSI which is the default, idk why
 
 	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOA);
 	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOB);
