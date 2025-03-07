@@ -74,6 +74,7 @@ static float HumValue;
 static int64_t Timestamp = 0;
 
 extern float Grotation[MDI_NUM_AXES];
+extern bkdata alldata;//főképernyő adatok
 
 /* Private function prototypes -----------------------------------------------*/
 static void MX_DynamicInclinometer_Init(void);
@@ -407,8 +408,8 @@ static void DI_Data_Handler(Msg_t *Msg, Msg_t *Cmd)
       Grotation[0] = data_out.rotation[0];
       Grotation[1] = data_out.rotation[1];
       Grotation[2] = data_out.rotation[2];
-
-
+      alldata.grad = calcSlope(Grotation[2]);
+   
 
       /*(void)memcpy(&Msg->Data[55], (void *)data_out.quaternion, 4U * sizeof(float));
       (void)memcpy(&Msg->Data[71], (void *)data_out.rotation, 3U * sizeof(float));
