@@ -79,7 +79,9 @@ void LCD_sleep(void)
 	{
 		LL_TIM_CC_DisableChannel(TIM15, LL_TIM_CHANNEL_CH1);
 	}else{}
-	LL_GPIO_ResetOutputPin(LCD_RES_GPIO_Port, LCD_RES_Pin);
+	LL_GPIO_SetOutputPin(LCD_RES_GPIO_Port, LCD_RES_Pin);
+	LL_GPIO_SetPinPull(LCD_RES_GPIO_Port, LCD_RES_Pin, LL_GPIO_PULL_UP);
+
 	__enable_irq();
 }
 

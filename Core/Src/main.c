@@ -198,7 +198,7 @@ int main(void)
 		while(btn == 0x00)//amíg nem nyomok semmit itt ciklik
 		{
 			NVIC_DisableIRQ(SysTick_IRQn);
-			HAL_PWR_EnterSTOPMode(/*PWR_MAINREGULATOR_ON*/PWR_LOWPOWERREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+			HAL_PWR_EnterSLEEPMode(PWR_LOWPOWERREGULATOR_ON, PWR_SLEEPENTRY_WFI);
 			NVIC_EnableIRQ(SysTick_IRQn);
 			__NOP();
 		}
@@ -303,11 +303,11 @@ int main(void)
 						{
 							if(d==10)
 							{
-								tim_delay_ms(50);//késleltetés hogy az utolsó kirajzolt csíkrészlet is látható legyen
+								tim_delay_ms(150);//késleltetés hogy az utolsó kirajzolt csíkrészlet is látható legyen
 								pwr_down();
 							} else{}
 							draw_line_x(1, 1+((d+1)*6), 60, Pixel_on);//futó csík
-							tim_delay_ms(50);
+							tim_delay_ms(150);
 							print_disp_mat();
 							if(btn != entergomb)
 							{
@@ -1097,15 +1097,31 @@ void pwr_down(void)
 	LL_TIM_DisableCounter(TIM15);
 	LL_TIM_DisableCounter(TIM16);
 
-	NVIC_DisableIRQ(RTC_Alarm_IRQn);//not to trigger interrupt after sending to sleep the LCD
 	LL_RTC_DisableWriteProtection(RTC);
 	LL_RTC_ALMA_Disable(RTC);//ne keltse fel az rtc
 	LL_RTC_EnableWriteProtection(RTC);
 
-	LCD_sleep();
+	NVIC_DisableIRQ(TIM1_CC_IRQn);
+	NVIC_DisableIRQ(TIM2_IRQn);
+	NVIC_DisableIRQ(TIM1_BRK_TIM15_IRQn);
+	NVIC_DisableIRQ(TIM1_UP_TIM16_IRQn);
+	NVIC_DisableIRQ(TIM6_IRQn);
+	NVIC_DisableIRQ(RTC_Alarm_IRQn);//not to trigger interrupt after sending to sleep the LCD
 
 	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts
 	EXTI->PR2 = 0x00000078;//clear pending interrupts
+
+	LCD_sleep();
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+	//HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LCD_RES_Pin);
+	HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, LCD_RES_Pin);
+	HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, BACKLIGHT_PWM_Pin);
+	HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_B, FLASHLIGHT_Pin);
+	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LCD_CS_Pin);
+	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_B, ACC_CS_Pin);
+
+	HAL_PWREx_EnablePullUpPullDownConfig();//to preserve pull cfg for LCD_RES pin during shutdown mode
+
 	/*uint8_t tmp_reg = 0;
 	ism330dhcx_read_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL7_G, &tmp_reg, 1);
 	tmp_reg |= 0x80;
@@ -1121,7 +1137,6 @@ void pwr_down(void)
 	*/
 	ISM330DHCX_DeInit(MotionCompObj[CUSTOM_ISM330DHCX_0]);
 
-
 	__disable_irq();
 	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts
 	EXTI->PR2 = 0x00000078;//clear pending interrupts
@@ -1131,10 +1146,25 @@ void pwr_down(void)
 	HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);
 	RCC->BDCR |= (RCC_BDCR_LSEON | RCC_BDCR_RTCEN);
 
-	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts							//	    ________  	//
-	EXTI->PR2 = 0x00000078;//clear pending interrupts							//     /  zzzz  \	//
-	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);//clear wake up flag						//     | zzzzzz |	//
-	HAL_PWREx_EnterSHUTDOWNMode();//after wake up, jumps to reset vector	    //    <_________/	//
+	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts
+	EXTI->PR2 = 0x00000078;//clear pending interrupts
+	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);//clear wake up flag
+	(void)PWR->SCR;
+
+	  MODIFY_REG(PWR->CR1, PWR_CR1_LPMS, PWR_CR1_LPMS_SHUTDOWN);//Set Shutdown mode
+	  SET_BIT(SCB->SCR, ((uint32_t)SCB_SCR_SLEEPDEEP_Msk));//Set SLEEPDEEP bit of Cortex System Control Register
+#ifndef DEBUG
+	  DBGMCU->CR = 0; // Disable debug, trace and IWDG in low-power modes
+#endif
+	  /* This option is used to ensure that store operations are completed */
+#if defined ( __CC_ARM)
+	  __force_stores();
+#endif
+	  while(1)
+	  {
+		  __DSB();
+		  __WFI();
+	  }
 }
 
 void write_secondary_page_data(void)
@@ -1411,7 +1441,6 @@ static void init(void)
 
 	//TODO put debloated inits here
 
-
 	HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN2);
 
 	__enable_irq();
@@ -1431,6 +1460,11 @@ static void init(void)
 	LCD_send_cmd(CMD_display_all_points_on);	//LCD test, meg amúgy is felvillan egy kicsit induláskor, és az nem néz ki túl jól
 	LL_mDelay(500);								//
 	LCD_send_cmd(CMD_display_all_points_off);	//
+
+	uint8_t tmp_reg = 0;
+	ism330dhcx_read_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_TAP_CFG2, &tmp_reg, 1);
+	tmp_reg |= 0x60;//Enable activity/inactivity (sleep) function. Sets accelerometer ODR to 12.5 Hz (low-power mode), gyro to power-down mode)
+	ism330dhcx_write_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_TAP_CFG2, &tmp_reg, 1);
 
 	LL_TIM_EnableCounter(TIM1);
 	LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH1);
@@ -1511,6 +1545,7 @@ static void init(void)
 	LL_RTC_ALMA_Enable(RTC);
 	SetSmoothCalib( (int16_t)( (int16_t)Read_M95010_W_EEPROM(EE_RTC_smcalL) | ((int16_t)Read_M95010_W_EEPROM(EE_RTC_smcalH) << 8) ) );// best value on BK2.2 is 29 //kell ide mert tápfesz elvesztése esetén nem jegyzi meg az értéket
 	LL_RTC_EnableWriteProtection(RTC);
+	LL_RTC_CAL_LowPower_Enable(RTC);
 
 	__enable_irq();
 }
@@ -1542,14 +1577,7 @@ void ClockConfig(void)
 
 	}
 	LL_PWR_EnableBkUpAccess();
-	LL_RCC_LSE_SetDriveCapability(LL_RCC_LSEDRIVE_LOW);
-	LL_RCC_LSE_Enable();
 
-	/* Wait till LSE is ready */
-	while(LL_RCC_LSE_IsReady() != 1)
-	{
-
-	}
 	LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSI, LL_RCC_PLLM_DIV_1, 10, LL_RCC_PLLR_DIV_4);
 	LL_RCC_PLL_EnableDomain_SYS();
 	LL_RCC_PLL_Enable();
@@ -1577,8 +1605,6 @@ void ClockConfig(void)
 		Error_Handler();
 	}
 
-	__HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_HSI);//when waking up from stop mode, use HSI oscillator not MSI which is the default, idk why
-
 	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOA);
 	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOB);
 	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOC);
@@ -1599,17 +1625,17 @@ void ClockConfig(void)
 	if(LL_RCC_GetRTCClockSource() != LL_RCC_RTC_CLKSOURCE_LSE)
 	{
 		FlagStatus pwrclkchanged = RESET;
-		/* Update LSE configuration in Backup Domain control register */
-		/* Requires to enable write access to Backup Domain if necessary */
+		// Update LSE configuration in Backup Domain control register
+		// Requires to enable write access to Backup Domain if necessary
 		if (LL_APB1_GRP1_IsEnabledClock (LL_APB1_GRP1_PERIPH_PWR) != 1U)
 		{
-			/* Enables the PWR Clock and Enables access to the backup domain */
+			// Enables the PWR Clock and Enables access to the backup domain
 			LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 			pwrclkchanged = SET;
 		}
 		if (LL_PWR_IsEnabledBkUpAccess () != 1U)
 		{
-			/* Enable write access to Backup domain */
+			// Enable write access to Backup domain
 			LL_PWR_EnableBkUpAccess();
 			while (LL_PWR_IsEnabledBkUpAccess () == 0U)
 			{
@@ -1621,13 +1647,13 @@ void ClockConfig(void)
 		LL_RCC_LSE_SetDriveCapability(LL_RCC_LSEDRIVE_LOW);
 		LL_RCC_LSE_Enable();
 
-		/* Wait till LSE is ready */
+		// Wait till LSE is ready
 		while(LL_RCC_LSE_IsReady() != 1)
 		{
 			__NOP();
 		}
 		LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
-		/* Restore clock configuration if changed */
+		// Restore clock configuration if changed
 		if (pwrclkchanged == SET)
 		{
 			LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_PWR);
