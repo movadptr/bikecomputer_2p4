@@ -146,6 +146,7 @@ void copy_lap(lap* l_dest, lap* l_source);
 void Calibrate_ADC(void);
 void write_secondary_page_data(void);
 float calcSTM32temp(uint16_t rawtemp);
+float calcSlope(float angle);
 
 void Conway_s_game_of_life();
 int Minesweepergame();

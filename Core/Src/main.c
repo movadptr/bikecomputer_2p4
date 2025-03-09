@@ -1019,6 +1019,14 @@ static void MX_GPIO_Init(void)
 
 //////////////functions////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+float calcSlope(float angle)
+{
+	float slope = 0;
+	slope = angle/45;//at 45° slope is 100%
+	slope *= (-100);// *100 -> convert to %; *-1 -> because imu axis is backwards
+	return slope;
+}
+
 float calcSTM32temp(uint16_t rawtemp)
 {
 	float temp = 0;
