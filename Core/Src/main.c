@@ -135,6 +135,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  NVIC_EnableIRQ(SysTick_IRQn);
   ClockConfig();
 
   /* USER CODE END Init */
@@ -1586,6 +1587,15 @@ void ClockConfig(void)
 	}
 	LL_PWR_EnableBkUpAccess();
 
+	LL_RCC_LSE_SetDriveCapability(LL_RCC_LSEDRIVE_LOW);
+	LL_RCC_LSE_Enable();
+
+	/* Wait till LSE is ready */
+	while(LL_RCC_LSE_IsReady() != 1)
+	{
+
+	}
+
 	LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSI, LL_RCC_PLLM_DIV_1, 10, LL_RCC_PLLR_DIV_4);
 	LL_RCC_PLL_EnableDomain_SYS();
 	LL_RCC_PLL_Enable();
@@ -1635,7 +1645,7 @@ void ClockConfig(void)
 		FlagStatus pwrclkchanged = RESET;
 		// Update LSE configuration in Backup Domain control register
 		// Requires to enable write access to Backup Domain if necessary
-		if (LL_APB1_GRP1_IsEnabledClock (LL_APB1_GRP1_PERIPH_PWR) != 1U)
+		if (LL_APB1_GRP1_IsEnabledClock(LL_APB1_GRP1_PERIPH_PWR) != 1U)
 		{
 			// Enables the PWR Clock and Enables access to the backup domain
 			LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
