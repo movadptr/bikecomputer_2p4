@@ -932,7 +932,7 @@ static void MX_GPIO_Init(void)
   /**/
   GPIO_InitStruct.Pin = EEPROM_CS_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_MEDIUM;
+  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   LL_GPIO_Init(EEPROM_CS_GPIO_Port, &GPIO_InitStruct);
@@ -1120,14 +1120,17 @@ void pwr_down(void)
 	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts
 	EXTI->PR2 = 0x00000078;//clear pending interrupts
 
+	LL_GPIO_ResetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
+
 	LCD_sleep();
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 	//HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LCD_RES_Pin);
-	HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, LCD_RES_Pin);
-	HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, BACKLIGHT_PWM_Pin);
-	HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_B, FLASHLIGHT_Pin);
-	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LCD_CS_Pin);
-	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_B, ACC_CS_Pin);
+	//HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, LCD_RES_Pin);
+	//HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, BACKLIGHT_PWM_Pin);
+	//HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_B, FLASHLIGHT_Pin);
+	//HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LCD_CS_Pin);
+	//HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_B, ACC_CS_Pin);
+	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_B, EEPROM_CS_Pin);
 
 	HAL_PWREx_EnablePullUpPullDownConfig();//to preserve pull cfg for LCD_RES pin during shutdown mode
 
@@ -1149,10 +1152,11 @@ void pwr_down(void)
 	__disable_irq();
 	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts
 	EXTI->PR2 = 0x00000078;//clear pending interrupts
-	LL_GPIO_ResetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
+
 	__enable_irq();
 
-	HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);
+	HAL_PWREx_EnableBORPVD_ULP();
+	//HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);
 	RCC->BDCR |= (RCC_BDCR_LSEON | RCC_BDCR_RTCEN);
 
 	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts
@@ -1173,6 +1177,10 @@ void pwr_down(void)
 	  {
 		  __DSB();
 		  __WFI();
+		  __WFI();
+		  __NOP();
+		  __NOP();
+		  __NOP();
 	  }
 }
 
