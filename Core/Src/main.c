@@ -1123,30 +1123,27 @@ void pwr_down(void)
 	LL_GPIO_ResetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
 
 	LCD_sleep();
-	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+	//LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 	//HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LCD_RES_Pin);
 	//HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, LCD_RES_Pin);
-	//HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, BACKLIGHT_PWM_Pin);
-	//HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_B, FLASHLIGHT_Pin);
 	//HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LCD_CS_Pin);
-	//HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_B, ACC_CS_Pin);
+
+
+	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_B, ACC_CS_Pin);
 	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_B, EEPROM_CS_Pin);
 
-	HAL_PWREx_EnablePullUpPullDownConfig();//to preserve pull cfg for LCD_RES pin during shutdown mode
+	//set pull on SPI lines in order to minimize current
+	//+-------------+-------------------+---------------+
+	//|				| eeprom consumes	| IMU consumes	|
+	//|wihout this	| 100-400uA			| 700uA			|
+	//|with this	| 0.3-0.4uA			| 4.3uA			|overall 4.9 uA, //LCD still not connected/measured//and without LDO consumption
+	//+-------------+-------------------+---------------+
+	HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, LL_GPIO_PIN_5);
+	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LL_GPIO_PIN_6);//
+	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LL_GPIO_PIN_7);//
 
-	/*uint8_t tmp_reg = 0;
-	ism330dhcx_read_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL7_G, &tmp_reg, 1);
-	tmp_reg |= 0x80;
-	ism330dhcx_write_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL7_G, &tmp_reg, 1);
+	HAL_PWREx_EnablePullUpPullDownConfig();
 
-	ism330dhcx_read_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL1_XL, &tmp_reg, 1);
-	tmp_reg &= 0x0f;
-	ism330dhcx_write_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL1_XL, &tmp_reg, 1);
-
-	ism330dhcx_read_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL2_G, &tmp_reg, 1);
-	tmp_reg &= 0x0f;
-	ism330dhcx_write_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL2_G, &tmp_reg, 1);
-	*/
 	ISM330DHCX_DeInit(MotionCompObj[CUSTOM_ISM330DHCX_0]);
 
 	__disable_irq();
@@ -1175,10 +1172,11 @@ void pwr_down(void)
 #endif
 	  while(1)
 	  {
+		  //TODO check if this mess is needed
 		  __DSB();
 		  __WFI();
 		  __WFI();
-		  __NOP();
+		  __NOP();//check errata
 		  __NOP();
 		  __NOP();
 	  }
