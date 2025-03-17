@@ -94,11 +94,11 @@ float Grotation[MDI_NUM_AXES];
 
 /* Private function prototypes -----------------------------------------------*/
 
-static void MX_GPIO_Init(void);
-static void MX_RNG_Init(void);
+static void GPIO_Init(void);
+static void RNG_Init(void);
 static void MX_CRC_Init(void);
 static void SPI1_Init(void);
-static void MX_ADC1_Init(void);
+static void ADC1_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM6_Init(void);
@@ -148,14 +148,14 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();
+  GPIO_Init();
 
-  MX_RNG_Init();
+  RNG_Init();
 
   MX_CRC_Init();
   SPI1_Init();
 
-  MX_ADC1_Init();
+  ADC1_Init();
 
   DMA_Init();
   MX_TIM1_Init();
@@ -408,128 +408,78 @@ static void MX_TIM1_Init(void)
   * @param None
   * @retval None
   */
-static void MX_ADC1_Init(void)
+static void ADC1_Init(void)
 {
-
-  /* USER CODE BEGIN ADC1_Init 0 */
 	Calibrate_ADC();
-  /* USER CODE END ADC1_Init 0 */
 
-  LL_ADC_InitTypeDef ADC_InitStruct = {0};
-  LL_ADC_REG_InitTypeDef ADC_REG_InitStruct = {0};
-  LL_ADC_CommonInitTypeDef ADC_CommonInitStruct = {0};
+	NVIC_SetPriority(ADC1_2_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+	NVIC_EnableIRQ(ADC1_2_IRQn);
 
-  LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-  /* Peripheral clock enable */
-
-
-  /**ADC1 GPIO Configuration
-  PA1   ------> ADC1_IN6
-  PB1   ------> ADC1_IN16
-  */
-  GPIO_InitStruct.Pin = BATT_SENSE_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(BATT_SENSE_GPIO_Port, &GPIO_InitStruct);
-
-  GPIO_InitStruct.Pin = LIGHT_SENSE_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(LIGHT_SENSE_GPIO_Port, &GPIO_InitStruct);
-
-  NVIC_SetPriority(ADC1_2_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
-  NVIC_EnableIRQ(ADC1_2_IRQn);
-
-  /* ADC1 DMA Init */
-
-  /* ADC1 Init */
-  LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_1, LL_DMA_REQUEST_0);
-
-  LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_CHANNEL_1, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
-
-  LL_DMA_SetChannelPriorityLevel(DMA1, LL_DMA_CHANNEL_1, LL_DMA_PRIORITY_HIGH);
-
-  LL_DMA_SetMode(DMA1, LL_DMA_CHANNEL_1, LL_DMA_MODE_CIRCULAR);
-
-  LL_DMA_SetPeriphIncMode(DMA1, LL_DMA_CHANNEL_1, LL_DMA_PERIPH_NOINCREMENT);
-
-  LL_DMA_SetMemoryIncMode(DMA1, LL_DMA_CHANNEL_1, LL_DMA_MEMORY_INCREMENT);
-
-  LL_DMA_SetPeriphSize(DMA1, LL_DMA_CHANNEL_1, LL_DMA_PDATAALIGN_HALFWORD);
-
-  LL_DMA_SetMemorySize(DMA1, LL_DMA_CHANNEL_1, LL_DMA_MDATAALIGN_HALFWORD);
-
-  /* USER CODE BEGIN ADC1_Init 1 */
-
-  /* USER CODE END ADC1_Init 1 */
-
-  /** Common config
-  */
-  ADC_InitStruct.Resolution = LL_ADC_RESOLUTION_12B;
-  ADC_InitStruct.DataAlignment = LL_ADC_DATA_ALIGN_RIGHT;
-  ADC_InitStruct.LowPowerMode = LL_ADC_LP_MODE_NONE;
-  LL_ADC_Init(ADC1, &ADC_InitStruct);
-  ADC_REG_InitStruct.TriggerSource = LL_ADC_REG_TRIG_SOFTWARE;
-  ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_ENABLE_4RANKS;
-  ADC_REG_InitStruct.SequencerDiscont = LL_ADC_REG_SEQ_DISCONT_DISABLE;
-  ADC_REG_InitStruct.ContinuousMode = LL_ADC_REG_CONV_SINGLE;
-  ADC_REG_InitStruct.DMATransfer = LL_ADC_REG_DMA_TRANSFER_LIMITED;
-  ADC_REG_InitStruct.Overrun = LL_ADC_REG_OVR_DATA_PRESERVED;
-  LL_ADC_REG_Init(ADC1, &ADC_REG_InitStruct);
-  LL_ADC_SetOverSamplingScope(ADC1, LL_ADC_OVS_DISABLE);
-  LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_VREFINT|LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-  ADC_CommonInitStruct.CommonClock = LL_ADC_CLOCK_ASYNC_DIV1;
-  ADC_CommonInitStruct.Multimode = LL_ADC_MULTI_INDEPENDENT;
-  LL_ADC_CommonInit(__LL_ADC_COMMON_INSTANCE(ADC1), &ADC_CommonInitStruct);
+	LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_1, LL_DMA_REQUEST_0);
+	LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_CHANNEL_1, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
+	LL_DMA_SetChannelPriorityLevel(DMA1, LL_DMA_CHANNEL_1, LL_DMA_PRIORITY_HIGH);
+	LL_DMA_SetMode(DMA1, LL_DMA_CHANNEL_1, LL_DMA_MODE_CIRCULAR);
+	LL_DMA_SetPeriphIncMode(DMA1, LL_DMA_CHANNEL_1, LL_DMA_PERIPH_NOINCREMENT);
+	LL_DMA_SetMemoryIncMode(DMA1, LL_DMA_CHANNEL_1, LL_DMA_MEMORY_INCREMENT);
+	LL_DMA_SetPeriphSize(DMA1, LL_DMA_CHANNEL_1, LL_DMA_PDATAALIGN_HALFWORD);
+	LL_DMA_SetMemorySize(DMA1, LL_DMA_CHANNEL_1, LL_DMA_MDATAALIGN_HALFWORD);
 
 
+	if (LL_ADC_IsEnabled(ADC1) == 0UL)//ADC instance must be disabled
+	{
+	  MODIFY_REG(ADC1->CFGR, ADC_CFGR_RES | ADC_CFGR_ALIGN | ADC_CFGR_AUTDLY, LL_ADC_RESOLUTION_12B | LL_ADC_DATA_ALIGN_RIGHT | LL_ADC_LP_MODE_NONE);
+	}
 
-  /* Disable ADC deep power down (enabled by default after reset state) */
-  LL_ADC_DisableDeepPowerDown(ADC1);
-  /* Enable ADC internal voltage regulator */
-  LL_ADC_EnableInternalRegulator(ADC1);
-  /* Delay for ADC internal voltage regulator stabilization. */
-  /* Compute number of CPU cycles to wait for, from delay in us. */
-  /* Note: Variable divided by 2 to compensate partially */
-  /* CPU processing cycles (depends on compilation optimization). */
-  /* Note: If system core clock frequency is below 200kHz, wait time */
-  /* is only a few CPU processing cycles. */
-  uint32_t wait_loop_index;
-  wait_loop_index = ((LL_ADC_DELAY_INTERNAL_REGUL_STAB_US * (SystemCoreClock / (100000 * 2))) / 10);
-  while(wait_loop_index != 0)
-  {
-    wait_loop_index--;
-  }
+  	//ADC_REG_Init
+	if (LL_ADC_IsEnabled(ADC1) == 0UL)// ADC instance must be disabled.
+	{
+		// Note: On this STM32 series, ADC trigger edge is set to value 0x0 by setting of trigger source to SW start.
+		MODIFY_REG(ADC1->CFGR, ADC_CFGR_EXTSEL | ADC_CFGR_EXTEN | ADC_CFGR_DISCEN | ADC_CFGR_DISCNUM | ADC_CFGR_CONT | ADC_CFGR_DMAEN | ADC_CFGR_DMACFG | ADC_CFGR_OVRMOD,
+				   LL_ADC_REG_TRIG_SOFTWARE | LL_ADC_REG_SEQ_DISCONT_DISABLE | LL_ADC_REG_CONV_SINGLE | LL_ADC_REG_DMA_TRANSFER_LIMITED | LL_ADC_REG_OVR_DATA_PRESERVED);
+		LL_ADC_REG_SetSequencerLength(ADC1, LL_ADC_REG_SEQ_SCAN_ENABLE_4RANKS);
+	}
 
-  /** Configure Regular Channel
-  */
-  LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1, LL_ADC_CHANNEL_6);
-  LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_6, LL_ADC_SAMPLINGTIME_247CYCLES_5);
-  LL_ADC_SetChannelSingleDiff(ADC1, LL_ADC_CHANNEL_6, LL_ADC_SINGLE_ENDED);
+	LL_ADC_SetOverSamplingScope(ADC1, LL_ADC_OVS_DISABLE);
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_VREFINT|LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 
-  /** Configure Regular Channel
-  */
-  LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_2, LL_ADC_CHANNEL_16);
-  LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_16, LL_ADC_SAMPLINGTIME_247CYCLES_5);
-  LL_ADC_SetChannelSingleDiff(ADC1, LL_ADC_CHANNEL_16, LL_ADC_SINGLE_ENDED);
+	if (__LL_ADC_IS_ENABLED_ALL_COMMON_INSTANCE(ADC12_COMMON) == 0UL)
+	{
+		MODIFY_REG(ADC12_COMMON->CCR, ADC_CCR_CKMODE | ADC_CCR_PRESC | ADC_CCR_DUAL | ADC_CCR_MDMA | ADC_CCR_DELAY, LL_ADC_CLOCK_ASYNC_DIV1 | LL_ADC_MULTI_INDEPENDENT);
+	}
 
-  /** Configure Regular Channel
-  */
-  LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_3, LL_ADC_CHANNEL_VREFINT);
-  LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_VREFINT, LL_ADC_SAMPLINGTIME_247CYCLES_5);
-  LL_ADC_SetChannelSingleDiff(ADC1, LL_ADC_CHANNEL_VREFINT, LL_ADC_SINGLE_ENDED);
+	// Disable ADC deep power down (enabled by default after reset state)
+	LL_ADC_DisableDeepPowerDown(ADC1);
+	LL_ADC_EnableInternalRegulator(ADC1);
+	/* Delay for ADC internal voltage regulator stabilization. */
+	/* Compute number of CPU cycles to wait for, from delay in us. */
+	/* Note: Variable divided by 2 to compensate partially */
+	/* CPU processing cycles (depends on compilation optimization). */
+	/* Note: If system core clock frequency is below 200kHz, wait time */
+	/* is only a few CPU processing cycles. */
+	uint32_t wait_loop_index;
+	wait_loop_index = ((LL_ADC_DELAY_INTERNAL_REGUL_STAB_US * (SystemCoreClock / (100000 * 2))) / 10);
+	while(wait_loop_index != 0)
+	{
+		wait_loop_index--;
+	}
 
-  /** Configure Regular Channel
-  */
-  LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_4, LL_ADC_CHANNEL_TEMPSENSOR);
-  LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_TEMPSENSOR, LL_ADC_SAMPLINGTIME_247CYCLES_5);
-  LL_ADC_SetChannelSingleDiff(ADC1, LL_ADC_CHANNEL_TEMPSENSOR, LL_ADC_SINGLE_ENDED);
-  /* USER CODE BEGIN ADC1_Init 2 */
+	LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1, LL_ADC_CHANNEL_6);
+	LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_6, LL_ADC_SAMPLINGTIME_247CYCLES_5);
+	LL_ADC_SetChannelSingleDiff(ADC1, LL_ADC_CHANNEL_6, LL_ADC_SINGLE_ENDED);
 
-  LL_ADC_Enable(ADC1);
-  /* USER CODE END ADC1_Init 2 */
+	LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_2, LL_ADC_CHANNEL_16);
+	LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_16, LL_ADC_SAMPLINGTIME_247CYCLES_5);
+	LL_ADC_SetChannelSingleDiff(ADC1, LL_ADC_CHANNEL_16, LL_ADC_SINGLE_ENDED);
 
+	LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_3, LL_ADC_CHANNEL_VREFINT);
+	LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_VREFINT, LL_ADC_SAMPLINGTIME_247CYCLES_5);
+	LL_ADC_SetChannelSingleDiff(ADC1, LL_ADC_CHANNEL_VREFINT, LL_ADC_SINGLE_ENDED);
+
+	LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_4, LL_ADC_CHANNEL_TEMPSENSOR);
+	LL_ADC_SetChannelSamplingTime(ADC1, LL_ADC_CHANNEL_TEMPSENSOR, LL_ADC_SAMPLINGTIME_247CYCLES_5);
+	LL_ADC_SetChannelSingleDiff(ADC1, LL_ADC_CHANNEL_TEMPSENSOR, LL_ADC_SINGLE_ENDED);
+
+	LL_ADC_Enable(ADC1);
 }
 
 /**
@@ -584,22 +534,9 @@ static void MX_CRC_Init(void)
   * @param None
   * @retval None
   */
-static void MX_RNG_Init(void)
+static void RNG_Init(void)
 {
-
-  /* USER CODE BEGIN RNG_Init 0 */
-
-  /* USER CODE END RNG_Init 0 */
-
-
-  /* USER CODE BEGIN RNG_Init 1 */
-
-  /* USER CODE END RNG_Init 1 */
   LL_RNG_Enable(RNG);
-  /* USER CODE BEGIN RNG_Init 2 */
-
-  /* USER CODE END RNG_Init 2 */
-
 }
 
 
@@ -886,133 +823,97 @@ static void MX_TIM16_Init(void)
   * @param None
   * @retval None
   */
-static void MX_GPIO_Init(void)
+static void GPIO_Init(void)
 {
-  LL_EXTI_InitTypeDef EXTI_InitStruct = {0};
-  LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
+	LL_GPIO_SetOutputPin(GPIOA, LCD_CS_Pin|LCD_RES_Pin);
+	LL_GPIO_SetOutputPin(GPIOB, ACC_CS_Pin|EEPROM_CS_Pin);
+	LL_GPIO_ResetOutputPin(LCD_DC_GPIO_Port, LCD_DC_Pin);
+	LL_GPIO_ResetOutputPin(GPIOB, FLASHLIGHT_Pin|D_LED_Pin);
+
+	LL_GPIO_SetPinSpeed(LCD_CS_GPIO_Port, LCD_CS_Pin, LL_GPIO_SPEED_FREQ_LOW);
+	LL_GPIO_SetPinOutputType(LCD_CS_GPIO_Port, LCD_CS_Pin, LL_GPIO_OUTPUT_PUSHPULL);
+	LL_GPIO_SetPinPull(LCD_CS_GPIO_Port, LCD_CS_Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetPinMode(LCD_CS_GPIO_Port, LCD_CS_Pin, LL_GPIO_MODE_OUTPUT);
+
+	LL_GPIO_SetPinSpeed(LCD_RES_GPIO_Port, LCD_RES_Pin, LL_GPIO_SPEED_FREQ_LOW);
+	LL_GPIO_SetPinOutputType(LCD_RES_GPIO_Port, LCD_RES_Pin, LL_GPIO_OUTPUT_PUSHPULL);
+	LL_GPIO_SetPinPull(LCD_RES_GPIO_Port, LCD_RES_Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetPinMode(LCD_RES_GPIO_Port, LCD_RES_Pin, LL_GPIO_MODE_OUTPUT);
+
+	LL_GPIO_SetPinSpeed(LCD_DC_GPIO_Port, LCD_DC_Pin, LL_GPIO_SPEED_FREQ_LOW);
+	LL_GPIO_SetPinOutputType(LCD_DC_GPIO_Port, LCD_DC_Pin, LL_GPIO_OUTPUT_PUSHPULL);
+	LL_GPIO_SetPinPull(LCD_DC_GPIO_Port, LCD_DC_Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetPinMode(LCD_DC_GPIO_Port, LCD_DC_Pin, LL_GPIO_MODE_OUTPUT);
+
+	LL_GPIO_SetPinSpeed(ACC_CS_GPIO_Port, ACC_CS_Pin, LL_GPIO_SPEED_FREQ_LOW);
+	LL_GPIO_SetPinOutputType(ACC_CS_GPIO_Port, ACC_CS_Pin, LL_GPIO_OUTPUT_PUSHPULL);
+	LL_GPIO_SetPinPull(ACC_CS_GPIO_Port, ACC_CS_Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetPinMode(ACC_CS_GPIO_Port, ACC_CS_Pin, LL_GPIO_MODE_OUTPUT);
+
+	LL_GPIO_SetPinSpeed(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin, LL_GPIO_SPEED_FREQ_LOW);
+	LL_GPIO_SetPinOutputType(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin, LL_GPIO_OUTPUT_PUSHPULL);
+	LL_GPIO_SetPinPull(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetPinMode(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin, LL_GPIO_MODE_OUTPUT);
+
+	LL_GPIO_SetPinSpeed(D_LED_GPIO_Port, D_LED_Pin, LL_GPIO_SPEED_FREQ_LOW);
+	LL_GPIO_SetPinOutputType(D_LED_GPIO_Port, D_LED_Pin, LL_GPIO_OUTPUT_PUSHPULL);
+	LL_GPIO_SetPinPull(D_LED_GPIO_Port, D_LED_Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetPinMode(D_LED_GPIO_Port, D_LED_Pin, LL_GPIO_MODE_OUTPUT);
+
+	LL_GPIO_SetPinPull(ACC_INT_GPIO_Port, ACC_INT_Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetPinMode(ACC_INT_GPIO_Port, ACC_INT_Pin, LL_GPIO_MODE_INPUT);
+
+	LL_GPIO_SetPinSpeed(EEPROM_CS_GPIO_Port, EEPROM_CS_Pin, LL_GPIO_SPEED_FREQ_LOW);
+	LL_GPIO_SetPinOutputType(EEPROM_CS_GPIO_Port, EEPROM_CS_Pin, LL_GPIO_OUTPUT_PUSHPULL);
+	LL_GPIO_SetPinPull(EEPROM_CS_GPIO_Port, EEPROM_CS_Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetPinMode(EEPROM_CS_GPIO_Port, EEPROM_CS_Pin, LL_GPIO_MODE_OUTPUT);
+
+	LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTB, LL_SYSCFG_EXTI_LINE12);
+	LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTB, LL_SYSCFG_EXTI_LINE13);
+	LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTA, LL_SYSCFG_EXTI_LINE8);
+	LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTA, LL_SYSCFG_EXTI_LINE9);
+
+	LL_EXTI_DisableEvent_0_31(LL_EXTI_LINE_12);
+	LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_12);
+	LL_EXTI_EnableRisingTrig_0_31(LL_EXTI_LINE_12);
+	LL_EXTI_EnableFallingTrig_0_31(LL_EXTI_LINE_12);
+
+	LL_EXTI_DisableEvent_0_31(LL_EXTI_LINE_13);
+	LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_13);
+	LL_EXTI_EnableRisingTrig_0_31(LL_EXTI_LINE_13);
+	LL_EXTI_EnableFallingTrig_0_31(LL_EXTI_LINE_13);
+
+	LL_EXTI_DisableEvent_0_31(LL_EXTI_LINE_8);
+	LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_8);
+	LL_EXTI_EnableRisingTrig_0_31(LL_EXTI_LINE_8);
+	LL_EXTI_EnableFallingTrig_0_31(LL_EXTI_LINE_8);
+
+	LL_EXTI_DisableEvent_0_31(LL_EXTI_LINE_9);
+	LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_9);
+	LL_EXTI_EnableRisingTrig_0_31(LL_EXTI_LINE_9);
+	LL_EXTI_EnableFallingTrig_0_31(LL_EXTI_LINE_9);
 
 
+	LL_GPIO_SetPinPull(BTN_EXIT_GPIO_Port, BTN_EXIT_Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetPinPull(BTN_BAL_SYS_WKUP2_GPIO_Port, BTN_BAL_SYS_WKUP2_Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetPinPull(BTN_JOBB_GPIO_Port, BTN_JOBB_Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetPinPull(BTN_ENTER_GPIO_Port, BTN_ENTER_Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetPinMode(BTN_EXIT_GPIO_Port, BTN_EXIT_Pin, LL_GPIO_MODE_INPUT);
+	LL_GPIO_SetPinMode(BTN_BAL_SYS_WKUP2_GPIO_Port, BTN_BAL_SYS_WKUP2_Pin, LL_GPIO_MODE_INPUT);
+	LL_GPIO_SetPinMode(BTN_JOBB_GPIO_Port, BTN_JOBB_Pin, LL_GPIO_MODE_INPUT);
+	LL_GPIO_SetPinMode(BTN_ENTER_GPIO_Port, BTN_ENTER_Pin, LL_GPIO_MODE_INPUT);
 
-  /**/
-  LL_GPIO_SetOutputPin(GPIOA, LCD_CS_Pin|LCD_RES_Pin);
+	NVIC_SetPriority(EXTI9_5_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+	NVIC_EnableIRQ(EXTI9_5_IRQn);
+	NVIC_SetPriority(EXTI15_10_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+	NVIC_EnableIRQ(EXTI15_10_IRQn);
 
-  /**/
-  LL_GPIO_SetOutputPin(GPIOB, ACC_CS_Pin|EEPROM_CS_Pin);
+	//ADC GPIO
+	LL_GPIO_SetPinPull(BATT_SENSE_GPIO_Port, BATT_SENSE_Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetPinMode(BATT_SENSE_GPIO_Port, BATT_SENSE_Pin, LL_GPIO_MODE_ANALOG);
 
-  /**/
-  LL_GPIO_ResetOutputPin(LCD_DC_GPIO_Port, LCD_DC_Pin);
-
-  /**/
-  LL_GPIO_ResetOutputPin(GPIOB, FLASHLIGHT_Pin|D_LED_Pin);
-
-  /**/
-  GPIO_InitStruct.Pin = LCD_CS_Pin|LCD_RES_Pin|LCD_DC_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /**/
-  GPIO_InitStruct.Pin = ACC_CS_Pin|FLASHLIGHT_Pin|D_LED_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /**/
-  GPIO_InitStruct.Pin = ACC_INT_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(ACC_INT_GPIO_Port, &GPIO_InitStruct);
-
-  /**/
-  GPIO_InitStruct.Pin = EEPROM_CS_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(EEPROM_CS_GPIO_Port, &GPIO_InitStruct);
-
-  /**/
-  LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTB, LL_SYSCFG_EXTI_LINE12);
-
-  /**/
-  LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTB, LL_SYSCFG_EXTI_LINE13);
-
-  /**/
-  LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTA, LL_SYSCFG_EXTI_LINE8);
-
-  /**/
-  LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTA, LL_SYSCFG_EXTI_LINE9);
-
-  /**/
-  EXTI_InitStruct.Line_0_31 = LL_EXTI_LINE_12;
-  EXTI_InitStruct.Line_32_63 = LL_EXTI_LINE_NONE;
-  EXTI_InitStruct.LineCommand = ENABLE;
-  EXTI_InitStruct.Mode = LL_EXTI_MODE_IT;
-  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING_FALLING;
-  LL_EXTI_Init(&EXTI_InitStruct);
-
-  /**/
-  EXTI_InitStruct.Line_0_31 = LL_EXTI_LINE_13;
-  EXTI_InitStruct.Line_32_63 = LL_EXTI_LINE_NONE;
-  EXTI_InitStruct.LineCommand = ENABLE;
-  EXTI_InitStruct.Mode = LL_EXTI_MODE_IT;
-  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING_FALLING;
-  LL_EXTI_Init(&EXTI_InitStruct);
-
-  /**/
-  EXTI_InitStruct.Line_0_31 = LL_EXTI_LINE_8;
-  EXTI_InitStruct.Line_32_63 = LL_EXTI_LINE_NONE;
-  EXTI_InitStruct.LineCommand = ENABLE;
-  EXTI_InitStruct.Mode = LL_EXTI_MODE_IT;
-  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING_FALLING;
-  LL_EXTI_Init(&EXTI_InitStruct);
-
-  /**/
-  EXTI_InitStruct.Line_0_31 = LL_EXTI_LINE_9;
-  EXTI_InitStruct.Line_32_63 = LL_EXTI_LINE_NONE;
-  EXTI_InitStruct.LineCommand = ENABLE;
-  EXTI_InitStruct.Mode = LL_EXTI_MODE_IT;
-  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING_FALLING;
-  LL_EXTI_Init(&EXTI_InitStruct);
-
-  /**/
-  LL_GPIO_SetPinPull(BTN_EXIT_GPIO_Port, BTN_EXIT_Pin, LL_GPIO_PULL_NO);
-
-  /**/
-  LL_GPIO_SetPinPull(BTN_BAL_SYS_WKUP2_GPIO_Port, BTN_BAL_SYS_WKUP2_Pin, LL_GPIO_PULL_NO);
-
-  /**/
-  LL_GPIO_SetPinPull(BTN_JOBB_GPIO_Port, BTN_JOBB_Pin, LL_GPIO_PULL_NO);
-
-  /**/
-  LL_GPIO_SetPinPull(BTN_ENTER_GPIO_Port, BTN_ENTER_Pin, LL_GPIO_PULL_NO);
-
-  /**/
-  LL_GPIO_SetPinMode(BTN_EXIT_GPIO_Port, BTN_EXIT_Pin, LL_GPIO_MODE_INPUT);
-
-  /**/
-  LL_GPIO_SetPinMode(BTN_BAL_SYS_WKUP2_GPIO_Port, BTN_BAL_SYS_WKUP2_Pin, LL_GPIO_MODE_INPUT);
-
-  /**/
-  LL_GPIO_SetPinMode(BTN_JOBB_GPIO_Port, BTN_JOBB_Pin, LL_GPIO_MODE_INPUT);
-
-  /**/
-  LL_GPIO_SetPinMode(BTN_ENTER_GPIO_Port, BTN_ENTER_Pin, LL_GPIO_MODE_INPUT);
-
-  /* EXTI interrupt init*/
-  NVIC_SetPriority(EXTI9_5_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
-  NVIC_EnableIRQ(EXTI9_5_IRQn);
-  NVIC_SetPriority(EXTI15_10_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
-  NVIC_EnableIRQ(EXTI15_10_IRQn);
-
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
+	LL_GPIO_SetPinPull(LIGHT_SENSE_GPIO_Port, LIGHT_SENSE_Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetPinMode(LIGHT_SENSE_GPIO_Port, LIGHT_SENSE_Pin, LL_GPIO_MODE_ANALOG);
 }
 
 /* USER CODE BEGIN 4 */
