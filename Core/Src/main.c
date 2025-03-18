@@ -335,71 +335,85 @@ int main(void)
   * @param None
   * @retval None
   */
-static void MX_TIM1_Init(void)
+static void TIM1_Init(void)//todo commit
 {
+	//TIM1 interrupt Init
+	NVIC_SetPriority(TIM1_BRK_TIM15_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+	NVIC_EnableIRQ(TIM1_BRK_TIM15_IRQn);
+	NVIC_SetPriority(TIM1_UP_TIM16_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+	NVIC_EnableIRQ(TIM1_UP_TIM16_IRQn);
+	NVIC_SetPriority(TIM1_CC_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+	NVIC_EnableIRQ(TIM1_CC_IRQn);
 
-  /* USER CODE BEGIN TIM1_Init 0 */
+	{
+		uint32_t tmpcr1;
 
-  /* USER CODE END TIM1_Init 0 */
 
-  LL_TIM_InitTypeDef TIM_InitStruct = {0};
-  LL_TIM_OC_InitTypeDef TIM_OC_InitStruct = {0};
-  LL_TIM_BDTR_InitTypeDef TIM_BDTRInitStruct = {0};
+		tmpcr1 = LL_TIM_ReadReg(TIM1, CR1);
+		MODIFY_REG(tmpcr1, (TIM_CR1_DIR | TIM_CR1_CMS), LL_TIM_COUNTERMODE_UP);//Select the Counter Mode
+		MODIFY_REG(tmpcr1, TIM_CR1_CKD, LL_TIM_CLOCKDIVISION_DIV1);//Set the clock division
+		LL_TIM_WriteReg(TIM1, CR1, tmpcr1);//Write to TIM1 CR1
+		LL_TIM_SetAutoReload(TIM1, 20000);
+		LL_TIM_SetPrescaler(TIM1, 20);
+		LL_TIM_SetRepetitionCounter(TIM1, 0);
+		LL_TIM_GenerateEvent_UPDATE(TIM1);//Generate an update event to reload the Prescaler and the repetition counter value (if applicable) immediately
+	}
 
-  /* Peripheral clock enable */
-  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_TIM1);
+	LL_TIM_DisableARRPreload(TIM1);
 
-  /* TIM1 interrupt Init */
-  NVIC_SetPriority(TIM1_BRK_TIM15_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
-  NVIC_EnableIRQ(TIM1_BRK_TIM15_IRQn);
-  NVIC_SetPriority(TIM1_UP_TIM16_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
-  NVIC_EnableIRQ(TIM1_UP_TIM16_IRQn);
-  NVIC_SetPriority(TIM1_CC_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
-  NVIC_EnableIRQ(TIM1_CC_IRQn);
+	{
+		uint32_t tmpccmr1;
+		uint32_t tmpccer;
+		uint32_t tmpcr2;
 
-  /* USER CODE BEGIN TIM1_Init 1 */
-  	  //runs with 2kHz interrupt freq
-  /* USER CODE END TIM1_Init 1 */
-  TIM_InitStruct.Prescaler = 20;
-  TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
-  TIM_InitStruct.Autoreload = 20000;
-  TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
-  TIM_InitStruct.RepetitionCounter = 0;
-  LL_TIM_Init(TIM1, &TIM_InitStruct);
-  LL_TIM_DisableARRPreload(TIM1);
-  LL_TIM_SetClockSource(TIM1, LL_TIM_CLOCKSOURCE_INTERNAL);
-  TIM_OC_InitStruct.OCMode = LL_TIM_OCMODE_FROZEN;
-  TIM_OC_InitStruct.OCState = LL_TIM_OCSTATE_DISABLE;
-  TIM_OC_InitStruct.OCNState = LL_TIM_OCSTATE_DISABLE;
-  TIM_OC_InitStruct.CompareValue = 0;
-  TIM_OC_InitStruct.OCPolarity = LL_TIM_OCPOLARITY_HIGH;
-  TIM_OC_InitStruct.OCNPolarity = LL_TIM_OCPOLARITY_HIGH;
-  TIM_OC_InitStruct.OCIdleState = LL_TIM_OCIDLESTATE_LOW;
-  TIM_OC_InitStruct.OCNIdleState = LL_TIM_OCIDLESTATE_LOW;
-  LL_TIM_OC_Init(TIM1, LL_TIM_CHANNEL_CH1, &TIM_OC_InitStruct);
-  LL_TIM_OC_DisableFast(TIM1, LL_TIM_CHANNEL_CH1);
-  LL_TIM_SetOCRefClearInputSource(TIM1, LL_TIM_OCREF_CLR_INT_NC);
-  LL_TIM_DisableExternalClock(TIM1);
-  LL_TIM_ConfigETR(TIM1, LL_TIM_ETR_POLARITY_NONINVERTED, LL_TIM_ETR_PRESCALER_DIV1, LL_TIM_ETR_FILTER_FDIV1);
-  LL_TIM_SetTriggerOutput(TIM1, LL_TIM_TRGO_RESET);
-  LL_TIM_SetTriggerOutput2(TIM1, LL_TIM_TRGO2_RESET);
-  LL_TIM_DisableMasterSlaveMode(TIM1);
-  TIM_BDTRInitStruct.OSSRState = LL_TIM_OSSR_DISABLE;
-  TIM_BDTRInitStruct.OSSIState = LL_TIM_OSSI_DISABLE;
-  TIM_BDTRInitStruct.LockLevel = LL_TIM_LOCKLEVEL_OFF;
-  TIM_BDTRInitStruct.DeadTime = 0;
-  TIM_BDTRInitStruct.BreakState = LL_TIM_BREAK_DISABLE;
-  TIM_BDTRInitStruct.BreakPolarity = LL_TIM_BREAK_POLARITY_HIGH;
-  TIM_BDTRInitStruct.BreakFilter = LL_TIM_BREAK_FILTER_FDIV1;
-  TIM_BDTRInitStruct.Break2State = LL_TIM_BREAK2_DISABLE;
-  TIM_BDTRInitStruct.Break2Polarity = LL_TIM_BREAK2_POLARITY_HIGH;
-  TIM_BDTRInitStruct.Break2Filter = LL_TIM_BREAK2_FILTER_FDIV1;
-  TIM_BDTRInitStruct.AutomaticOutput = LL_TIM_AUTOMATICOUTPUT_DISABLE;
-  LL_TIM_BDTR_Init(TIM1, &TIM_BDTRInitStruct);
-  /* USER CODE BEGIN TIM1_Init 2 */
+		CLEAR_BIT(TIM1->CCER, TIM_CCER_CC1E);//Disable the Channel 1: Reset the CC1E Bit
+		tmpccer = LL_TIM_ReadReg(TIM1, CCER);//Get the TIM1 CCER register value
+		tmpcr2 = LL_TIM_ReadReg(TIM1, CR2);//Get the TIM1 CR2 register value
+		tmpccmr1 = LL_TIM_ReadReg(TIM1, CCMR1);//Get the TIM1 CCMR1 register value
+		CLEAR_BIT(tmpccmr1, TIM_CCMR1_CC1S);//Reset Capture/Compare selection Bits
+		MODIFY_REG(tmpccmr1, TIM_CCMR1_OC1M, LL_TIM_OCMODE_FROZEN);//Set the Output Compare Mode
+		MODIFY_REG(tmpccer, TIM_CCER_CC1P, LL_TIM_OCPOLARITY_HIGH);//Set the Output Compare Polarity
+		MODIFY_REG(tmpccer, TIM_CCER_CC1E, LL_TIM_OCSTATE_DISABLE);//Set the Output State
+		MODIFY_REG(tmpccer, TIM_CCER_CC1NP, LL_TIM_OCPOLARITY_HIGH << 2U);//Set the complementary output Polarity
+		MODIFY_REG(tmpccer, TIM_CCER_CC1NE, LL_TIM_OCSTATE_DISABLE << 2U);//Set the complementary output State
+		MODIFY_REG(tmpcr2, TIM_CR2_OIS1, LL_TIM_OCIDLESTATE_LOW);//Set the Output Idle state
+		MODIFY_REG(tmpcr2, TIM_CR2_OIS1N, LL_TIM_OCIDLESTATE_LOW << 1U);//Set the complementary output Idle state
+		LL_TIM_WriteReg(TIM1, CR2, tmpcr2);//Write to TIM1 CR2
+		LL_TIM_WriteReg(TIM1, CCMR1, tmpccmr1);//Write to TIM1 CCMR1
+		LL_TIM_OC_SetCompareCH1(TIM1, 0);//Set the Capture Compare Register value
+		LL_TIM_WriteReg(TIM1, CCER, tmpccer);//Write to TIM1 CCER
+	}
 
-  /* USER CODE END TIM1_Init 2 */
+	LL_TIM_OC_DisableFast(TIM1, LL_TIM_CHANNEL_CH1);
+	LL_TIM_SetOCRefClearInputSource(TIM1, LL_TIM_OCREF_CLR_INT_NC);
+	LL_TIM_DisableExternalClock(TIM1);
+	LL_TIM_ConfigETR(TIM1, LL_TIM_ETR_POLARITY_NONINVERTED, LL_TIM_ETR_PRESCALER_DIV1, LL_TIM_ETR_FILTER_FDIV1);
+	LL_TIM_SetTriggerOutput(TIM1, LL_TIM_TRGO_RESET);
+	LL_TIM_SetTriggerOutput2(TIM1, LL_TIM_TRGO2_RESET);
+	LL_TIM_DisableMasterSlaveMode(TIM1);
 
+	{
+		uint32_t tmpbdtr = 0;
+
+		//Set the Lock level, the Break enable Bit and the Polarity, the OSSR State, the OSSI State, the dead time value and the Automatic Output Enable Bit */
+		// Set the BDTR bits
+		MODIFY_REG(tmpbdtr, TIM_BDTR_DTG, 0);
+		MODIFY_REG(tmpbdtr, TIM_BDTR_LOCK, LL_TIM_LOCKLEVEL_OFF);
+		MODIFY_REG(tmpbdtr, TIM_BDTR_OSSI, LL_TIM_OSSI_DISABLE);
+		MODIFY_REG(tmpbdtr, TIM_BDTR_OSSR, LL_TIM_OSSR_DISABLE);
+		MODIFY_REG(tmpbdtr, TIM_BDTR_BKE, LL_TIM_BREAK_DISABLE);
+		MODIFY_REG(tmpbdtr, TIM_BDTR_BKP, LL_TIM_BREAK_POLARITY_HIGH);
+		MODIFY_REG(tmpbdtr, TIM_BDTR_AOE, LL_TIM_AUTOMATICOUTPUT_DISABLE);
+		MODIFY_REG(tmpbdtr, TIM_BDTR_BKF, LL_TIM_BREAK_FILTER_FDIV1);
+
+		// Set the BREAK2 input related BDTR bit-fields
+		MODIFY_REG(tmpbdtr, TIM_BDTR_BK2F, LL_TIM_BREAK2_FILTER_FDIV1);
+		MODIFY_REG(tmpbdtr, TIM_BDTR_BK2E, LL_TIM_BREAK2_DISABLE);
+		MODIFY_REG(tmpbdtr, TIM_BDTR_BK2P, LL_TIM_BREAK2_POLARITY_HIGH);
+
+		// Set TIM1_BDTR
+		LL_TIM_WriteReg(TIM1, BDTR, tmpbdtr);
+	}
 }
 
 
@@ -586,76 +600,60 @@ static void SPI1_Init(void)
   * @param None
   * @retval None
   */
-static void MX_TIM2_Init(void)
+static void TIM2_Init(void) //TODO coomit
 {
+	// TIM2 interrupt Init
+	NVIC_SetPriority(TIM2_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+	NVIC_EnableIRQ(TIM2_IRQn);
 
-  /* USER CODE BEGIN TIM2_Init 0 */
+	{
+		uint32_t tmpcr1;
 
-  /* USER CODE END TIM2_Init 0 */
+		tmpcr1 = LL_TIM_ReadReg(TIM2, CR1);
+		MODIFY_REG(tmpcr1, (TIM_CR1_DIR | TIM_CR1_CMS), LL_TIM_COUNTERMODE_UP);// Select the Counter Mode
+		MODIFY_REG(tmpcr1, TIM_CR1_CKD, LL_TIM_CLOCKDIVISION_DIV1);// Set the clock division
+		LL_TIM_WriteReg(TIM2, CR1, tmpcr1);//Write to TIMx CR1
+		LL_TIM_SetAutoReload(TIM2, timAR);
+		LL_TIM_SetPrescaler(TIM2, 0);
+		LL_TIM_GenerateEvent_UPDATE(TIM2);//Generate an update event to reload the Prescaler and the repetition counter value (if applicable) immediately
+	}
 
-  LL_TIM_InitTypeDef TIM_InitStruct = {0};
-  LL_TIM_OC_InitTypeDef TIM_OC_InitStruct = {0};
+	LL_TIM_DisableARRPreload(TIM2);
 
-  LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+	{
+		uint32_t tmpccmr2;
+		uint32_t tmpccer;
+		uint32_t tmpcr2;
+
+		CLEAR_BIT(TIM2->CCER, TIM_CCER_CC3E);// Disable the Channel 3: Reset the CC3E Bit
+		tmpccer =  LL_TIM_ReadReg(TIM2, CCER);// Get the TIMx CCER register value
+		tmpcr2 = LL_TIM_ReadReg(TIM2, CR2);//Get the TIMx CR2 register value
+		tmpccmr2 = LL_TIM_ReadReg(TIM2, CCMR2);//Get the TIMx CCMR2 register value
+		CLEAR_BIT(tmpccmr2, TIM_CCMR2_CC3S);//Reset Capture/Compare selection Bits
+		MODIFY_REG(tmpccmr2, TIM_CCMR2_OC3M, LL_TIM_OCMODE_FROZEN);//Select the Output Compare Mode
+		MODIFY_REG(tmpccer, TIM_CCER_CC3P, LL_TIM_OCPOLARITY_HIGH << 8U);//Set the Output Compare Polarity
+		MODIFY_REG(tmpccer, TIM_CCER_CC3E, LL_TIM_OCSTATE_DISABLE << 8U);//Set the Output State
+		LL_TIM_WriteReg(TIM2, CR2, tmpcr2);//Write to TIMx CR2
+		LL_TIM_WriteReg(TIM2, CCMR2, tmpccmr2);//Write to TIMx CCMR2
+		LL_TIM_OC_SetCompareCH3(TIM2, 0);//Set the Capture Compare Register value
+		LL_TIM_WriteReg(TIM2, CCER, tmpccer);//Write to TIMx CCER
+	}
 
 
-  /**TIM2 GPIO Configuration
-  PA15 (JTDI)   ------> TIM2_CH1
-  PB3 (JTDO/TRACESWO)   ------> TIM2_CH2
-  */
-  GPIO_InitStruct.Pin = SPEED_SW_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  GPIO_InitStruct.Alternate = LL_GPIO_AF_1;
-  LL_GPIO_Init(SPEED_SW_GPIO_Port, &GPIO_InitStruct);
-
-  GPIO_InitStruct.Pin = CADENCE_SW_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  GPIO_InitStruct.Alternate = LL_GPIO_AF_1;
-  LL_GPIO_Init(CADENCE_SW_GPIO_Port, &GPIO_InitStruct);
-
-  /* TIM2 interrupt Init */
-  NVIC_SetPriority(TIM2_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
-  NVIC_EnableIRQ(TIM2_IRQn);
-
-  /* USER CODE BEGIN TIM2_Init 1 */
-
-  /* USER CODE END TIM2_Init 1 */
-  TIM_InitStruct.Prescaler = 0;
-  TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
-  TIM_InitStruct.Autoreload = timAR;
-  TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
-  LL_TIM_Init(TIM2, &TIM_InitStruct);
-  LL_TIM_DisableARRPreload(TIM2);
-  TIM_OC_InitStruct.OCMode = LL_TIM_OCMODE_FROZEN;
-  TIM_OC_InitStruct.OCState = LL_TIM_OCSTATE_DISABLE;
-  TIM_OC_InitStruct.OCNState = LL_TIM_OCSTATE_DISABLE;
-  TIM_OC_InitStruct.CompareValue = 0;
-  TIM_OC_InitStruct.OCPolarity = LL_TIM_OCPOLARITY_HIGH;
-  LL_TIM_OC_Init(TIM2, LL_TIM_CHANNEL_CH3, &TIM_OC_InitStruct);
-  LL_TIM_OC_DisableFast(TIM2, LL_TIM_CHANNEL_CH3);
-  LL_TIM_SetOCRefClearInputSource(TIM2, LL_TIM_OCREF_CLR_INT_NC);
-  LL_TIM_DisableExternalClock(TIM2);
-  LL_TIM_ConfigETR(TIM2, LL_TIM_ETR_POLARITY_NONINVERTED, LL_TIM_ETR_PRESCALER_DIV1, LL_TIM_ETR_FILTER_FDIV1);
-  LL_TIM_SetTriggerOutput(TIM2, LL_TIM_TRGO_RESET);
-  LL_TIM_DisableMasterSlaveMode(TIM2);
-  LL_TIM_IC_SetActiveInput(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_ACTIVEINPUT_DIRECTTI);
-  LL_TIM_IC_SetPrescaler(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_ICPSC_DIV1);
-  LL_TIM_IC_SetFilter(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_IC_FILTER_FDIV1);
-  LL_TIM_IC_SetPolarity(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_IC_POLARITY_FALLING);
-  LL_TIM_IC_SetActiveInput(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_ACTIVEINPUT_DIRECTTI);
-  LL_TIM_IC_SetPrescaler(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_ICPSC_DIV1);
-  LL_TIM_IC_SetFilter(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_IC_FILTER_FDIV1);
-  LL_TIM_IC_SetPolarity(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_IC_POLARITY_FALLING);
-  /* USER CODE BEGIN TIM2_Init 2 */
-
-  /* USER CODE END TIM2_Init 2 */
-
+	LL_TIM_OC_DisableFast(TIM2, LL_TIM_CHANNEL_CH3);
+	LL_TIM_SetOCRefClearInputSource(TIM2, LL_TIM_OCREF_CLR_INT_NC);
+	LL_TIM_DisableExternalClock(TIM2);
+	LL_TIM_ConfigETR(TIM2, LL_TIM_ETR_POLARITY_NONINVERTED, LL_TIM_ETR_PRESCALER_DIV1, LL_TIM_ETR_FILTER_FDIV1);
+	LL_TIM_SetTriggerOutput(TIM2, LL_TIM_TRGO_RESET);
+	LL_TIM_DisableMasterSlaveMode(TIM2);
+	LL_TIM_IC_SetActiveInput(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_ACTIVEINPUT_DIRECTTI);
+	LL_TIM_IC_SetPrescaler(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_ICPSC_DIV1);
+	LL_TIM_IC_SetFilter(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_IC_FILTER_FDIV1);
+	LL_TIM_IC_SetPolarity(TIM2, LL_TIM_CHANNEL_CH1, LL_TIM_IC_POLARITY_FALLING);
+	LL_TIM_IC_SetActiveInput(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_ACTIVEINPUT_DIRECTTI);
+	LL_TIM_IC_SetPrescaler(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_ICPSC_DIV1);
+	LL_TIM_IC_SetFilter(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_IC_FILTER_FDIV1);
+	LL_TIM_IC_SetPolarity(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_IC_POLARITY_FALLING);
 }
 
 /**
@@ -914,6 +912,19 @@ static void GPIO_Init(void)
 
 	LL_GPIO_SetPinPull(LIGHT_SENSE_GPIO_Port, LIGHT_SENSE_Pin, LL_GPIO_PULL_NO);
 	LL_GPIO_SetPinMode(LIGHT_SENSE_GPIO_Port, LIGHT_SENSE_Pin, LL_GPIO_MODE_ANALOG);
+
+	//TIM2 GPIO
+	LL_GPIO_SetPinSpeed(SPEED_SW_GPIO_Port, SPEED_SW_Pin, LL_GPIO_SPEED_FREQ_LOW);
+	LL_GPIO_SetPinOutputType(SPEED_SW_GPIO_Port, SPEED_SW_Pin, LL_GPIO_OUTPUT_PUSHPULL);
+	LL_GPIO_SetPinPull(SPEED_SW_GPIO_Port, SPEED_SW_Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetAFPin_8_15(SPEED_SW_GPIO_Port, SPEED_SW_Pin, LL_GPIO_AF_1);
+	LL_GPIO_SetPinMode(SPEED_SW_GPIO_Port, SPEED_SW_Pin, LL_GPIO_MODE_ALTERNATE);
+
+	LL_GPIO_SetPinSpeed(CADENCE_SW_GPIO_Port, CADENCE_SW_Pin, LL_GPIO_SPEED_FREQ_LOW);
+	LL_GPIO_SetPinOutputType(CADENCE_SW_GPIO_Port, CADENCE_SW_Pin, LL_GPIO_OUTPUT_PUSHPULL);
+	LL_GPIO_SetPinPull(CADENCE_SW_GPIO_Port, CADENCE_SW_Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetAFPin_0_7(CADENCE_SW_GPIO_Port, CADENCE_SW_Pin, LL_GPIO_AF_1);
+	LL_GPIO_SetPinMode(CADENCE_SW_GPIO_Port, CADENCE_SW_Pin, LL_GPIO_MODE_ALTERNATE);
 }
 
 /* USER CODE BEGIN 4 */
@@ -1467,7 +1478,7 @@ static void init(void)
 }
 
 
-void ClockConfig(void)
+void ClockConfig(void)//todo commit
 {
 	LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
 	while(LL_FLASH_GetLatency()!= LL_FLASH_LATENCY_2)
@@ -1542,10 +1553,11 @@ void ClockConfig(void)
 
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM2);
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM6);
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_TIM1);
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_TIM15);
+
+	LL_TIM_SetClockSource(TIM1, LL_TIM_CLOCKSOURCE_INTERNAL);
 	LL_TIM_SetClockSource(TIM15, LL_TIM_CLOCKSOURCE_INTERNAL);
-
-
 
 	if(LL_RCC_GetRTCClockSource() != LL_RCC_RTC_CLKSOURCE_LSE)
 	{
