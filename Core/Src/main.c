@@ -99,8 +99,8 @@ static void RNG_Init(void);
 static void MX_CRC_Init(void);
 static void SPI1_Init(void);
 static void ADC1_Init(void);
-static void MX_TIM1_Init(void);
-static void MX_TIM2_Init(void);
+static void TIM1_Init(void);
+static void TIM2_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_TIM15_Init(void);
 static void MX_TIM16_Init(void);
@@ -158,8 +158,8 @@ int main(void)
   ADC1_Init();
 
   DMA_Init();
-  MX_TIM1_Init();
-  MX_TIM2_Init();
+  TIM1_Init();
+  TIM2_Init();
   MX_TIM6_Init();
   MX_TIM15_Init();
   MX_TIM16_Init();
