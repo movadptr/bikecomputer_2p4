@@ -1034,13 +1034,6 @@ void pwr_down(void)
 
 	LL_GPIO_ResetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
 
-	LCD_sleep();
-	//LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-	//HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LCD_RES_Pin);
-	//HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, LCD_RES_Pin);
-	//HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LCD_CS_Pin);
-
-
 	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_B, ACC_CS_Pin);
 	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_B, EEPROM_CS_Pin);
 
@@ -1048,14 +1041,19 @@ void pwr_down(void)
 	//+-------------+-------------------+---------------+
 	//|				| eeprom consumes	| IMU consumes	|
 	//|wihout this	| 100-400uA			| 700uA			|
-	//|with this	| 0.3-0.4uA			| 4.3uA			|overall 4.9 uA, //LCD still not connected/measured//and without LDO consumption
+	//|with this	| 0.3-0.4uA			| 4.3uA			|
 	//+-------------+-------------------+---------------+
-	HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, LL_GPIO_PIN_5);
-	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LL_GPIO_PIN_6);//
-	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LL_GPIO_PIN_7);//
+	//With LCD overall consumption is ~7.3 uA
+	
+	HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, LL_GPIO_PIN_5);//SCK
+	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LL_GPIO_PIN_6);//MISO
+	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LL_GPIO_PIN_7);//MOSI
+
+	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LCD_RES_Pin);
+	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_A, LCD_CS_Pin);
 
 	HAL_PWREx_EnablePullUpPullDownConfig();
-
+	LCD_sleep();
 	ISM330DHCX_DeInit(MotionCompObj[CUSTOM_ISM330DHCX_0]);
 
 	__disable_irq();
@@ -1065,7 +1063,7 @@ void pwr_down(void)
 	__enable_irq();
 
 	HAL_PWREx_EnableBORPVD_ULP();
-	//HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);
+	HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);
 	RCC->BDCR |= (RCC_BDCR_LSEON | RCC_BDCR_RTCEN);
 
 	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts
