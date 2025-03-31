@@ -128,6 +128,7 @@ typedef struct
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+void setPinToGenericOutput(GPIO_TypeDef *GPIOx, uint32_t Pin);
 void SetSmoothCalib(int16_t calv);
 uint32_t get_dist_for_new_tyre(float old_tyre, float new_tyre, uint32_t current_dist_val);
 void tim_delay_ms(uint16_t d);
@@ -146,7 +147,7 @@ void copy_lap(lap* l_dest, lap* l_source);
 void Calibrate_ADC(void);
 void write_secondary_page_data(void);
 float calcSTM32temp(uint16_t rawtemp);
-float calcSlope(float angle);
+float getSlope(float angle);
 
 void Conway_s_game_of_life();
 int Minesweepergame();
@@ -203,8 +204,8 @@ void Tgame_main_isr();
 #define entergomb	0x02U
 #define jobbgomb	0x01U
 
-#define menu_delaytime 150U
-#define menu_delaytime_fast 110U
+#define menu_delaytime 200U
+#define menu_delaytime_fast 120U
 
 #define tyre_700x23C				2.09858F	//kerék kerülete méterben
 #define tyre_id_700x23C				0x01U

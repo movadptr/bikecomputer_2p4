@@ -180,8 +180,8 @@ static void MX_DynamicInclinometer_Init(void)
   Init_Sensors();
 
 #ifdef BSP_IP_MEMS_INT1_PIN_NUM
-  /* Initialize MEMS INT1 pin back to it's default state after I3C disable / I2C enable */
-  //MEMS_INT1_Init();
+  // Initialize MEMS INT1 pin back to it's default state after I3C disable / I2C enable
+  MEMS_INT1_Init();
 #endif
 
   /* DynamicInclinometer API initialization function */
@@ -408,7 +408,7 @@ static void DI_Data_Handler(Msg_t *Msg, Msg_t *Cmd)
       Grotation[0] = data_out.rotation[0];
       Grotation[1] = data_out.rotation[1];
       Grotation[2] = data_out.rotation[2];
-      alldata.grad = calcSlope(Grotation[2]);
+      alldata.grad = getSlope(Grotation[1]);
    
 
       /*(void)memcpy(&Msg->Data[55], (void *)data_out.quaternion, 4U * sizeof(float));
@@ -613,14 +613,9 @@ static void TIM_Config(uint32_t Freq)
   */
 static void MEMS_INT1_Force_Low(void)
 {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
+	setPinToGenericOutput(BSP_IP_MEMS_INT1_GPIOX, BSP_IP_MEMS_INT1_PIN_NUM);
 
-  GPIO_InitStruct.Pin = BSP_IP_MEMS_INT1_PIN_NUM;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(BSP_IP_MEMS_INT1_GPIOX, &GPIO_InitStruct);
-
-  HAL_GPIO_WritePin(BSP_IP_MEMS_INT1_GPIOX, BSP_IP_MEMS_INT1_PIN_NUM, GPIO_PIN_RESET);
+	LL_GPIO_ResetOutputPin(BSP_IP_MEMS_INT1_GPIOX, BSP_IP_MEMS_INT1_PIN_NUM);
 }
 
 /**
@@ -630,12 +625,8 @@ static void MEMS_INT1_Force_Low(void)
   */
 static void MEMS_INT1_Init(void)
 {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-  GPIO_InitStruct.Pin = BSP_IP_MEMS_INT1_PIN_NUM;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(BSP_IP_MEMS_INT1_GPIOX, &GPIO_InitStruct);
+	LL_GPIO_SetPinPull(BSP_IP_MEMS_INT1_GPIOX, BSP_IP_MEMS_INT1_PIN_NUM, LL_GPIO_PULL_NO);
+	LL_GPIO_SetPinMode(BSP_IP_MEMS_INT1_GPIOX, BSP_IP_MEMS_INT1_PIN_NUM, LL_GPIO_MODE_INPUT);
 }
 #endif
 

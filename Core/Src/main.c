@@ -124,56 +124,26 @@ static void DMA_Init(void);
   */
 int main(void)
 {
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
 
-  /* USER CODE BEGIN 1 */
+	ClockConfig();
+	GPIO_Init();
+	RNG_Init();
+	SPI1_Init();
+	ADC1_Init();
+	DMA_Init();
+	TIM1_Init();
+	TIM2_Init();
+	MX_CRC_Init();
+	MX_TIM6_Init();
+	MX_TIM15_Init();
+	MX_TIM16_Init();
 
-  /* USER CODE END 1 */
+	MX_MEMS_Init();
 
-  /* MCU Configuration--------------------------------------------------------*/
+	init();
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
-
-  /* USER CODE BEGIN Init */
-  NVIC_EnableIRQ(SysTick_IRQn);
-  ClockConfig();
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
-  //SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
-  GPIO_Init();
-
-  RNG_Init();
-
-  MX_CRC_Init();
-  SPI1_Init();
-
-  ADC1_Init();
-
-  DMA_Init();
-  TIM1_Init();
-  TIM2_Init();
-  MX_TIM6_Init();
-  MX_TIM15_Init();
-  MX_TIM16_Init();
-  /* USER CODE BEGIN 2 */
-
-
-  MX_MEMS_Init();
-
-  init();
-
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
 	btn=0;
 	while(1)
 	{
@@ -201,7 +171,6 @@ int main(void)
 			NVIC_DisableIRQ(SysTick_IRQn);
 			HAL_PWR_EnterSLEEPMode(PWR_LOWPOWERREGULATOR_ON, PWR_SLEEPENTRY_WFI);
 			NVIC_EnableIRQ(SysTick_IRQn);
-			__NOP();
 		}
 
 		if(btn == jobbgomb)
@@ -320,13 +289,9 @@ int main(void)
 			}
 		  btn=0;
 		} else{}
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
-  }
+	}
 
 	while(1)	{ __NOP();}
-  /* USER CODE END 3 */
 }
 
 
@@ -347,7 +312,6 @@ static void TIM1_Init(void)//todo commit
 
 	{
 		uint32_t tmpcr1;
-
 
 		tmpcr1 = LL_TIM_ReadReg(TIM1, CR1);
 		MODIFY_REG(tmpcr1, (TIM_CR1_DIR | TIM_CR1_CMS), LL_TIM_COUNTERMODE_UP);//Select the Counter Mode
@@ -416,7 +380,6 @@ static void TIM1_Init(void)//todo commit
 	}
 }
 
-
 /**
   * @brief ADC1 Initialization Function
   * @param None
@@ -438,10 +401,9 @@ static void ADC1_Init(void)
 	LL_DMA_SetPeriphSize(DMA1, LL_DMA_CHANNEL_1, LL_DMA_PDATAALIGN_HALFWORD);
 	LL_DMA_SetMemorySize(DMA1, LL_DMA_CHANNEL_1, LL_DMA_MDATAALIGN_HALFWORD);
 
-
 	if (LL_ADC_IsEnabled(ADC1) == 0UL)//ADC instance must be disabled
 	{
-	  MODIFY_REG(ADC1->CFGR, ADC_CFGR_RES | ADC_CFGR_ALIGN | ADC_CFGR_AUTDLY, LL_ADC_RESOLUTION_12B | LL_ADC_DATA_ALIGN_RIGHT | LL_ADC_LP_MODE_NONE);
+		MODIFY_REG(ADC1->CFGR, ADC_CFGR_RES | ADC_CFGR_ALIGN | ADC_CFGR_AUTDLY, LL_ADC_RESOLUTION_12B | LL_ADC_DATA_ALIGN_RIGHT | LL_ADC_LP_MODE_NONE);
 	}
 
   	//ADC_REG_Init
@@ -553,8 +515,6 @@ static void RNG_Init(void)
   LL_RNG_Enable(RNG);
 }
 
-
-
 /**
   * @brief SPI1 Initialization Function
   * @param None
@@ -663,7 +623,6 @@ static void TIM2_Init(void) //TODO coomit
   */
 static void MX_TIM6_Init(void)
 {
-
   /* USER CODE BEGIN TIM6_Init 0 */
 
   /* USER CODE END TIM6_Init 0 */
@@ -687,7 +646,6 @@ static void MX_TIM6_Init(void)
   /* USER CODE BEGIN TIM6_Init 2 */
 
   /* USER CODE END TIM6_Init 2 */
-
 }
 
 /**
@@ -828,43 +786,13 @@ static void GPIO_Init(void)
 	LL_GPIO_ResetOutputPin(LCD_DC_GPIO_Port, LCD_DC_Pin);
 	LL_GPIO_ResetOutputPin(GPIOB, FLASHLIGHT_Pin|D_LED_Pin);
 
-	LL_GPIO_SetPinSpeed(LCD_CS_GPIO_Port, LCD_CS_Pin, LL_GPIO_SPEED_FREQ_LOW);
-	LL_GPIO_SetPinOutputType(LCD_CS_GPIO_Port, LCD_CS_Pin, LL_GPIO_OUTPUT_PUSHPULL);
-	LL_GPIO_SetPinPull(LCD_CS_GPIO_Port, LCD_CS_Pin, LL_GPIO_PULL_NO);
-	LL_GPIO_SetPinMode(LCD_CS_GPIO_Port, LCD_CS_Pin, LL_GPIO_MODE_OUTPUT);
-
-	LL_GPIO_SetPinSpeed(LCD_RES_GPIO_Port, LCD_RES_Pin, LL_GPIO_SPEED_FREQ_LOW);
-	LL_GPIO_SetPinOutputType(LCD_RES_GPIO_Port, LCD_RES_Pin, LL_GPIO_OUTPUT_PUSHPULL);
-	LL_GPIO_SetPinPull(LCD_RES_GPIO_Port, LCD_RES_Pin, LL_GPIO_PULL_NO);
-	LL_GPIO_SetPinMode(LCD_RES_GPIO_Port, LCD_RES_Pin, LL_GPIO_MODE_OUTPUT);
-
-	LL_GPIO_SetPinSpeed(LCD_DC_GPIO_Port, LCD_DC_Pin, LL_GPIO_SPEED_FREQ_LOW);
-	LL_GPIO_SetPinOutputType(LCD_DC_GPIO_Port, LCD_DC_Pin, LL_GPIO_OUTPUT_PUSHPULL);
-	LL_GPIO_SetPinPull(LCD_DC_GPIO_Port, LCD_DC_Pin, LL_GPIO_PULL_NO);
-	LL_GPIO_SetPinMode(LCD_DC_GPIO_Port, LCD_DC_Pin, LL_GPIO_MODE_OUTPUT);
-
-	LL_GPIO_SetPinSpeed(ACC_CS_GPIO_Port, ACC_CS_Pin, LL_GPIO_SPEED_FREQ_LOW);
-	LL_GPIO_SetPinOutputType(ACC_CS_GPIO_Port, ACC_CS_Pin, LL_GPIO_OUTPUT_PUSHPULL);
-	LL_GPIO_SetPinPull(ACC_CS_GPIO_Port, ACC_CS_Pin, LL_GPIO_PULL_NO);
-	LL_GPIO_SetPinMode(ACC_CS_GPIO_Port, ACC_CS_Pin, LL_GPIO_MODE_OUTPUT);
-
-	LL_GPIO_SetPinSpeed(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin, LL_GPIO_SPEED_FREQ_LOW);
-	LL_GPIO_SetPinOutputType(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin, LL_GPIO_OUTPUT_PUSHPULL);
-	LL_GPIO_SetPinPull(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin, LL_GPIO_PULL_NO);
-	LL_GPIO_SetPinMode(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin, LL_GPIO_MODE_OUTPUT);
-
-	LL_GPIO_SetPinSpeed(D_LED_GPIO_Port, D_LED_Pin, LL_GPIO_SPEED_FREQ_LOW);
-	LL_GPIO_SetPinOutputType(D_LED_GPIO_Port, D_LED_Pin, LL_GPIO_OUTPUT_PUSHPULL);
-	LL_GPIO_SetPinPull(D_LED_GPIO_Port, D_LED_Pin, LL_GPIO_PULL_NO);
-	LL_GPIO_SetPinMode(D_LED_GPIO_Port, D_LED_Pin, LL_GPIO_MODE_OUTPUT);
-
-	LL_GPIO_SetPinPull(ACC_INT_GPIO_Port, ACC_INT_Pin, LL_GPIO_PULL_NO);
-	LL_GPIO_SetPinMode(ACC_INT_GPIO_Port, ACC_INT_Pin, LL_GPIO_MODE_INPUT);
-
-	LL_GPIO_SetPinSpeed(EEPROM_CS_GPIO_Port, EEPROM_CS_Pin, LL_GPIO_SPEED_FREQ_LOW);
-	LL_GPIO_SetPinOutputType(EEPROM_CS_GPIO_Port, EEPROM_CS_Pin, LL_GPIO_OUTPUT_PUSHPULL);
-	LL_GPIO_SetPinPull(EEPROM_CS_GPIO_Port, EEPROM_CS_Pin, LL_GPIO_PULL_NO);
-	LL_GPIO_SetPinMode(EEPROM_CS_GPIO_Port, EEPROM_CS_Pin, LL_GPIO_MODE_OUTPUT);
+	setPinToGenericOutput(LCD_CS_GPIO_Port, LCD_CS_Pin);
+	setPinToGenericOutput(LCD_RES_GPIO_Port, LCD_RES_Pin);
+	setPinToGenericOutput(LCD_DC_GPIO_Port, LCD_DC_Pin);
+	setPinToGenericOutput(ACC_CS_GPIO_Port, ACC_CS_Pin);
+	setPinToGenericOutput(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
+	setPinToGenericOutput(D_LED_GPIO_Port, D_LED_Pin);
+	setPinToGenericOutput(EEPROM_CS_GPIO_Port, EEPROM_CS_Pin);
 
 	LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTB, LL_SYSCFG_EXTI_LINE12);
 	LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTB, LL_SYSCFG_EXTI_LINE13);
@@ -890,7 +818,6 @@ static void GPIO_Init(void)
 	LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_9);
 	LL_EXTI_EnableRisingTrig_0_31(LL_EXTI_LINE_9);
 	LL_EXTI_EnableFallingTrig_0_31(LL_EXTI_LINE_9);
-
 
 	LL_GPIO_SetPinPull(BTN_EXIT_GPIO_Port, BTN_EXIT_Pin, LL_GPIO_PULL_NO);
 	LL_GPIO_SetPinPull(BTN_BAL_SYS_WKUP2_GPIO_Port, BTN_BAL_SYS_WKUP2_Pin, LL_GPIO_PULL_NO);
@@ -932,11 +859,24 @@ static void GPIO_Init(void)
 
 //////////////functions////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-float calcSlope(float angle)
+void setPinToGenericOutput(GPIO_TypeDef *GPIOx, uint32_t Pin)
+{
+	LL_GPIO_SetPinSpeed(GPIOx, Pin, LL_GPIO_SPEED_FREQ_LOW);
+	LL_GPIO_SetPinOutputType(GPIOx, Pin, LL_GPIO_OUTPUT_PUSHPULL);
+	LL_GPIO_SetPinPull(GPIOx, Pin, LL_GPIO_PULL_NO);
+	LL_GPIO_SetPinMode(GPIOx, Pin, LL_GPIO_MODE_OUTPUT);
+}
+
+float getSlope(float angle)
 {
 	float slope = 0;
 	slope = angle/45;//at 45° slope is 100%
-	slope *= (-100);// *100 -> convert to %; *-1 -> because imu axis is backwards
+	slope *= (-100.0);// *100 -> convert to %; *-1 -> because imu axis is backwards
+
+	//not interested outside of the range +-45°
+	if(slope>100.0) { slope = 100.0;}
+	if(slope<(-100.0)) { slope = (-100.0);}
+
 	return slope;
 }
 
@@ -1022,6 +962,7 @@ void pwr_down(void)
 	LL_RTC_ALMA_Disable(RTC);//ne keltse fel az rtc
 	LL_RTC_EnableWriteProtection(RTC);
 
+	NVIC_DisableIRQ(SysTick_IRQn);
 	NVIC_DisableIRQ(TIM1_CC_IRQn);
 	NVIC_DisableIRQ(TIM2_IRQn);
 	NVIC_DisableIRQ(TIM1_BRK_TIM15_IRQn);
@@ -1059,37 +1000,38 @@ void pwr_down(void)
 	__disable_irq();
 	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts
 	EXTI->PR2 = 0x00000078;//clear pending interrupts
-
 	__enable_irq();
 
 	HAL_PWREx_EnableBORPVD_ULP();
 	HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2);
 	RCC->BDCR |= (RCC_BDCR_LSEON | RCC_BDCR_RTCEN);
 
-	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts
-	EXTI->PR2 = 0x00000078;//clear pending interrupts
+	//clear pending interrupts again, right before going to sleep
+	EXTI->PR1 = 0x007DFFFF;
+	EXTI->PR2 = 0x00000078;
+
 	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);//clear wake up flag
 	(void)PWR->SCR;
 
-	  MODIFY_REG(PWR->CR1, PWR_CR1_LPMS, PWR_CR1_LPMS_SHUTDOWN);//Set Shutdown mode
-	  SET_BIT(SCB->SCR, ((uint32_t)SCB_SCR_SLEEPDEEP_Msk));//Set SLEEPDEEP bit of Cortex System Control Register
+	MODIFY_REG(PWR->CR1, PWR_CR1_LPMS, PWR_CR1_LPMS_SHUTDOWN);//Set Shutdown mode
+	SET_BIT(SCB->SCR, ((uint32_t)SCB_SCR_SLEEPDEEP_Msk));//Set SLEEPDEEP bit of Cortex System Control Register
 #ifndef DEBUG
-	  DBGMCU->CR = 0; // Disable debug, trace and IWDG in low-power modes
+	DBGMCU->CR = 0; // Disable debug, trace and IWDG in low-power modes
 #endif
-	  /* This option is used to ensure that store operations are completed */
+	/* This option is used to ensure that store operations are completed */
 #if defined ( __CC_ARM)
-	  __force_stores();
+	__force_stores();
 #endif
-	  while(1)
-	  {
-		  //TODO check if this mess is needed
-		  __DSB();
-		  __WFI();
-		  __WFI();
-		  __NOP();//check errata
-		  __NOP();
-		  __NOP();
-	  }
+	while(1)
+	{
+		//TODO check if this mess is needed
+		__DSB();
+		__WFI();
+		__WFI();
+		__NOP();//check errata
+		__NOP();
+		__NOP();
+	}
 }
 
 void write_secondary_page_data(void)
@@ -1191,7 +1133,6 @@ void write_main_page_data(void)
 
 	if(system_bits & moving_time_recording_EN_1)	{ write_character_V(58, 14, '>', Pixel_on, size_5x8);}
 	else{ fill_rectangle_xy_height_width(58, 14, 7, 5, Pixel_off);}
-
 }
 
 void write_elapsed_time(void)
@@ -1305,13 +1246,12 @@ void SetSmoothCalib(int16_t calv)
   * Care should be taken where you use this delay!!!!!!!!
   * The interrupt priority is 2, so should only use, where it can be guranteed that won't be called in higher prio interupts -
   * because it will freeze the application
-  * Also don't use it in the init section where it's interrupt is not configured, or the global interrupt EN is disabled
-  *
-  * Could do a runtime timeout, but that will icnrease the code size and the delay would be useless anyway
+  * Also don't use it in the init section where it's interrupt is not configured, or where the global interrupt EN is disabled
   */
 void tim_delay_ms(uint16_t d)
 {
-	//prescaler: 24000; period: 65535
+	//prescaler: 40000;
+	//period: 65535
 	//1ms -> 1 clk;
 	//max delay:   65535 ms
 
@@ -1323,7 +1263,7 @@ void tim_delay_ms(uint16_t d)
 
 	while(tim_delay_ms_flag == 0)//wait for the interrupt
 	{
-		asm("nop");
+		__NOP();
 	}
 	tim_delay_ms_flag = 0;
 
@@ -1363,9 +1303,6 @@ void draw_battery_band(float volt_val)
 ////init functions///////////////////////////////////////////////////////////////////////////////
 static void init(void)
 {
-
-	//TODO put debloated inits here
-
 	HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN2);
 
 	__enable_irq();
