@@ -32,7 +32,7 @@
 #define BP0		2
 #define BP1		3
 
-#define MEMSIZE	128U	//memory size in bytes //TODO commit
+#define MEMSIZE	128U	//memory size in bytes
 
 uint8_t Read_M95010_W_EEPROM(uint8_t addr);
 void Write_M95010_W_EEPROM(uint8_t addr, uint8_t data);
