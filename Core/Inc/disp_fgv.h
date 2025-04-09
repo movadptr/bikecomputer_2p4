@@ -39,6 +39,7 @@ uint8_t write_dec_num_time_format_V(uint8_t col, uint8_t row, uint8_t num, uint8
 uint8_t write_dec_num_float_V(uint8_t col, uint8_t row, float num, uint8_t digits_after_dot, uint8_t Pixel_Status, uint8_t size);
 void print_bmp_V(uint8_t col, uint8_t row, uint8_t constant *bmp, uint8_t Pixel_Status, uint8_t write_mode);
 uint8_t write_dec_num_uint32_t_V(uint8_t col, uint8_t row, uint32_t num, uint8_t Pixel_Status, uint8_t size, uint8_t align);
+uint8_t write_hex_byte_V(uint8_t col, uint8_t row, uint8_t num, uint8_t Pixel_Status, uint8_t size, uint8_t align);
 
 //____________________for horizontal orientation________________________________//
 uint8_t write_character_H(uint8_t start_col, uint8_t start_row, char character, uint8_t Pixel_Status, uint8_t size);
