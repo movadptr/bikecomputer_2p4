@@ -36,7 +36,47 @@ uint8_t charwidth=0;
 //____________________print in vertical orientation________________________________//
 
 
-
+//TODO test this fn
+//TODO make _H variant
+uint8_t write_hex_byte_V(uint8_t col, uint8_t row, uint8_t num, uint8_t Pixel_Status, uint8_t size, uint8_t align)
+{
+	uint8_t i=0, numt[2]={0};
+	//hexa számjegylefejtés
+	numt[0]=((num/16)%16);
+	numt[1]=((num/1)%16);
+	if(align==ALIGN_RIGHT)//annyival arrébb kezdjük balra kiírni amennyi pixel széles a számsor elválasztó oszlopokkal együtt
+	{
+		while(i<2)
+		{
+			if(numt[i]>9)
+			{
+				character_info(numt[i]+('A'-10),size);
+			}
+			else
+			{
+				character_info(numt[i]+'0',size);
+			}
+			col-=charwidth;
+			i++;
+		}
+		if(col>(pixels_x-1))	{return lcd_err;}	else{}//alulcsordult
+	}	else{}
+	i=0;
+	while(i<2)
+	{
+		if(numt[i]>9)
+		{
+			col=write_character_V(col, row, numt[i]+('A'-10), Pixel_Status, size);
+		}
+		else
+		{
+			col=write_character_V(col, row, numt[i]+'0', Pixel_Status, size);
+		}
+		if(col==lcd_err)	{ return lcd_err;}//nem fér ki a karakter
+		else{ i++; col++;}
+	}
+	return col;
+}
 
 uint8_t write_dec_num_uint32_t_V(uint8_t col, uint8_t row, uint32_t num, uint8_t Pixel_Status, uint8_t size, uint8_t align)
 {
