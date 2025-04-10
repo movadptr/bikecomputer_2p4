@@ -20,7 +20,7 @@ void EEPROM_editor(void)
 {
 	uint8_t memBuf[MEMSIZE] = {0};
 
-	//read EEPROM data into RAM16
+	//read EEPROM data into RAM
 	for(uint8_t indx=0; indx<MEMSIZE; indx++)
 	{
 		memBuf[indx] = Read_M95010_W_EEPROM(indx);
@@ -33,6 +33,7 @@ void EEPROM_editor(void)
 
 	while(1)
 	{
+		delete_disp_mat();
 		printEditorContent(memBuf, displayedMemSectionBeg);
 		printCursor(displayedMemSectionBeg, memIndex);
 		print_disp_mat();
@@ -132,12 +133,22 @@ void printByte(uint8_t* buff, uint8_t startindx, uint8_t indx)
 	uint8_t pos = indx-startindx;
 	if(pos % 2 == 0)//páros indexeknél bal oldalra rakjuk
 	{
+		//write byte
+		fill_rectangle_xy_height_width(16, 100-((pos/2)*10), 8, 11, Pixel_off);
 		write_hex_byte_V(16, 100-((pos/2)*10), buff[indx], Pixel_on, size_5x8, ALIGN_LEFT);
+		//ascii representation
+		fill_rectangle_xy_height_width(51, 100-((pos/2)*10), 8, 11, Pixel_off);
+		write_character_V(51, 100-((pos/2)*10), ((buff[indx]>='!')&&(buff[indx]<='z')) ? buff[indx] : '.', Pixel_on, size_5x8);
+
 	}
 	else//páratlan indexnél jobb oldalra
 	{
-
+		//write byte
+		fill_rectangle_xy_height_width(33, 100-((pos/2)*10), 8, 11, Pixel_off);
 		write_hex_byte_V(33, 100-((pos/2)*10), buff[indx], Pixel_on, size_5x8, ALIGN_LEFT);
+		//ascii representation
+		fill_rectangle_xy_height_width(58, 100-((pos/2)*10), 8, 11, Pixel_off);
+		write_character_V(58, 100-((pos/2)*10), ((buff[indx]>='!')&&(buff[indx]<='z')) ? buff[indx] : '.', Pixel_on, size_5x8);
 	}
 }
 
@@ -167,7 +178,7 @@ void printEditorContent(uint8_t* buff, uint8_t startindx)
 
 		//print ascii representation
 		write_character_V(51, 100-(i*10), ((buff[startindx+i]>='!')&&(buff[startindx+i]<='z')) ? buff[startindx+i] : '.', Pixel_on, size_5x8);
-		write_character_V(51, 100-(i*10), ((buff[startindx+i+1]>='!')&&(buff[startindx+i+1]<='z')) ? buff[startindx+i+1] : '.', Pixel_on, size_5x8);
+		write_character_V(58, 100-(i*10), ((buff[startindx+i+1]>='!')&&(buff[startindx+i+1]<='z')) ? buff[startindx+i+1] : '.', Pixel_on, size_5x8);
 
 		i+=2;
 	}
