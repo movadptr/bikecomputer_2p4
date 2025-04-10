@@ -1,7 +1,7 @@
 /*
  * EEPROM_editor.c
  *
- * Created: 2019. 05. 04. 11:23:20
+ * Created: 2025. 04. 09.
  * Author : Póti Szabolcs
  */
 
@@ -12,15 +12,9 @@
 #include "main.h"
 #include "M95010_W_EEPROM.h"
 #include "disp_fgv.h"
+#include "EEPROM_editor.h"
 
-
-#define DISPLAYED_MEM_SECTION_SIZE 20U
 extern volatile uint8_t btn;
-
-void EEPROM_editor(void);
-void printCursor(uint8_t indx);
-void printEditorContent(uint8_t* buff, uint8_t startindx);
-
 
 void EEPROM_editor(void)
 {
@@ -34,13 +28,14 @@ void EEPROM_editor(void)
 
 	delete_disp_mat();
 	uint8_t displayedMemSectionBeg = 0;
-	uint8_t cursor_pos = 0;
+	uint8_t memIndex = 0;
 	btn=0;
 
 	while(1)
 	{
 		printEditorContent(memBuf, displayedMemSectionBeg);
-		printCursor(cursor_pos);
+		printCursor(displayedMemSectionBeg, memIndex);
+		print_disp_mat();
 
 		while(btn==0);
 		tim_delay_ms(menu_delaytime);
@@ -48,48 +43,114 @@ void EEPROM_editor(void)
 		switch(btn)
 		{
 			//move right
-			case jobbgomb:
+			case jobbgomb:	if(memIndex < (MEMSIZE-2))
+							{
+								memIndex++;
+							}
+							if((displayedMemSectionBeg+DISPLAYED_MEM_SECTION_SIZE) < memIndex)
+							{
+								displayedMemSectionBeg += 2;//mert egy sorba 2 byte fér el
+							}
+
 							break;
 			//move left
-			case balgomb:
+			case balgomb:	if(memIndex > 0)
+							{
+								memIndex--;
+							}
+							if((displayedMemSectionBeg) > memIndex)
+							{
+								displayedMemSectionBeg -= 2;//mert egy sorba 2 byte fér el
+							}
 							break;
 			//move up
-			case entergomb:
+			case entergomb:	if(memIndex > 2)
+							{
+								memIndex -= 2;
+							}
+							if((displayedMemSectionBeg) > memIndex)
+							{
+								displayedMemSectionBeg -= 2;//mert egy sorba 2 byte fér el
+							}
 							break;
 			//move down
-			case exitgomb:
+			case exitgomb:	if(memIndex < (MEMSIZE-3))
+							{
+								memIndex += 2;
+							}
+							if((displayedMemSectionBeg) < memIndex)
+							{
+								displayedMemSectionBeg += 2;//mert egy sorba 2 byte fér el
+							}
 							break;
 			//modify
-			case (entergomb+exitgomb):
+			case (entergomb|exitgomb):	modifyValue(memBuf, memIndex, displayedMemSectionBeg);
 										break;
-			//exit editor and save changes
-			case (balgomb+exitgomb):
-										break;
+
+			default:	break;
 		}
 
-
+		if(btn == (balgomb|exitgomb))//exit EEPROM editor
+		{
+			break;
+		}
 	}
-
 
 	//write RAM data into EEPROM
 	for(uint8_t indx=0; indx<MEMSIZE; indx++)
 	{
-		memBuf[indx] = Read_M95010_W_EEPROM(indx);
+		Write_M95010_W_EEPROM(indx, memBuf[indx]);
 	}
 }
 
-/*
- * @param indx is 0-19, where 0 represents the left upper byte on the screen, 19 represents the right lower byte of the screen.
- */
-void printCursor(uint8_t indx)
+void modifyValue(uint8_t* buff, uint8_t indx, uint8_t startindx)
 {
-	if(indx % 2 == 0)//páros indexeknél bal oldalra rakjuk
+	while(1)
 	{
-		draw_rectangle_xy_height_width(16, 100-((indx/2)*10), 10, 15, Pixel_on);
+		if( (btn == jobbgomb) && (buff[indx] < 0xff) )//értéket növel
+		{
+			buff[indx]++;
+			printByte(buff, startindx, indx);
+			printCursor(startindx, indx);
+			print_disp_mat();
+			tim_delay_ms(menu_delaytime);
+		}	else{}
+		if((btn == balgomb) && (buff[indx] > 0x00) )//értéket csökkent
+		{
+			buff[indx]--;
+			printByte(buff, startindx, indx);
+			printCursor(startindx, indx);
+			print_disp_mat();
+			tim_delay_ms(menu_delaytime);
+		}	else{}
+		if(btn == entergomb)	{ break;}	else{} //értéket elfogad
+	}
+}
+
+void printByte(uint8_t* buff, uint8_t startindx, uint8_t indx)
+{
+	uint8_t pos = indx-startindx;
+	if(pos % 2 == 0)//páros indexeknél bal oldalra rakjuk
+	{
+		write_hex_byte_V(16, 100-((pos/2)*10), buff[indx], Pixel_on, size_5x8, ALIGN_LEFT);
 	}
 	else//páratlan indexnél jobb oldalra
 	{
-		draw_rectangle_xy_height_width(33, 100-((indx/2)*10), 10, 15, Pixel_on);
+
+		write_hex_byte_V(33, 100-((pos/2)*10), buff[indx], Pixel_on, size_5x8, ALIGN_LEFT);
+	}
+}
+
+void printCursor(uint8_t startindx, uint8_t indx)
+{
+	uint8_t ix = indx-startindx;
+	if(ix % 2 == 0)//páros indexeknél bal oldalra rakjuk
+	{
+		draw_rectangle_xy_height_width(16, 100-((ix/2)*10), 10, 15, Pixel_on);
+	}
+	else//páratlan indexnél jobb oldalra
+	{
+		draw_rectangle_xy_height_width(33, 100-((ix/2)*10), 10, 15, Pixel_on);
 	}
 }
 
