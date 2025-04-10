@@ -17,6 +17,7 @@
 #include "ST7565_64x128_LCD.h"
 #include "M95010_W_EEPROM.h"
 #include "motion_di.h"
+#include "EEPROM_editor.h"
 
 extern volatile uint8_t btn;
 extern volatile float curr_tyre;//kerület m-ben
@@ -54,11 +55,10 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 		write_text_V(2, 42, "RTC_CAL", Pixel_on, size_5x8);
 		write_text_V(2, 32, "DIAG", Pixel_on, size_5x8);
 		//write_text_V(2, 22, "", Pixel_on, size_5x8);
+		write_text_V(2, 12, "EEPROMedt", Pixel_on, size_5x8);
 #if ADD_GAMES
 		write_text_V(2, 2, "Games", Pixel_on, size_5x8);
 #endif
-		//write_text_V(2, 2,  "", Pixel_on, size_5x8);
-
 		draw_rectangle_xy_height_width(0, menu_row_layer_0*10, 11, 64, Pixel_on);
 		print_disp_mat();
 		tim_delay_ms(menu_delaytime);
@@ -868,12 +868,12 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 						}
 						break;
 
-			/*TODO make an eeprom editor
+			/*
 			case 2:		break;
 			*/
-			/*
-			case 1:		break;
-			*/
+
+			case 1:		EEPROM_editor();
+						break;
 
 			//games submenu
 			case 0:		;
