@@ -8,7 +8,7 @@
 #ifndef INC_EEPROM_EDITOR_H_
 #define INC_EEPROM_EDITOR_H_
 
-#define DISPLAYED_MEM_SECTION_SIZE 20U
+#define DISPLAYED_MEM_SECTION_SIZE 22U
 
 void EEPROM_editor(void);
 void printEditorContent(uint8_t* buff, uint8_t startindx);
