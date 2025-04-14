@@ -13,6 +13,7 @@
 #include "M95010_W_EEPROM.h"
 #include "disp_fgv.h"
 #include "EEPROM_editor.h"
+#include "numpicker.h"
 
 extern volatile uint8_t btn;
 
@@ -85,7 +86,8 @@ void EEPROM_editor(void)
 							}
 							break;
 			//modify
-			case (entergomb|exitgomb):	modifyValue(memBuf, memIndex, displayedMemSectionBeg);
+			case (entergomb|exitgomb):	tim_delay_ms(menu_delaytime);
+										memBuf[memIndex] = numPickerUInt32_V(0x00, 0xff, memBuf[memIndex], &btn);
 										break;
 
 			default:	break;
@@ -101,32 +103,6 @@ void EEPROM_editor(void)
 	for(uint8_t indx=0; indx<MEMSIZE; indx++)
 	{
 		Write_M95010_W_EEPROM(indx, memBuf[indx]);
-	}
-}
-
-void modifyValue(uint8_t* buff, uint8_t indx, uint8_t startindx)
-{
-	tim_delay_ms(menu_delaytime);
-
-	while(1)
-	{
-		if( (btn == jobbgomb) && (buff[indx] < 0xff) )//increase value
-		{
-			buff[indx]++;
-			printByte(buff, startindx, indx);
-			printCursor(startindx, indx);
-			print_disp_mat();
-			tim_delay_ms(menu_delaytime);
-		}	else{}
-		if((btn == balgomb) && (buff[indx] > 0x00) )//decrease value
-		{
-			buff[indx]--;
-			printByte(buff, startindx, indx);
-			printCursor(startindx, indx);
-			print_disp_mat();
-			tim_delay_ms(menu_delaytime);
-		}	else{}
-		if(btn == entergomb)	{ break;}	else{} //accept value
 	}
 }
 

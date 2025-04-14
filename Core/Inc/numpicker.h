@@ -12,6 +12,6 @@
 
 uint32_t assembleU32Num(uint8_t* numtf);
 void disassembleU32Num(uint8_t* numtf, uint32_t val);
-uint32_t numPickerUInt32_V(uint32_t Llimit, uint32_t Hlimit, uint32_t startval, uint8_t* buttons);
+uint32_t numPickerUInt32_V(uint32_t Llimit, uint32_t Hlimit, uint32_t startval, volatile uint8_t* buttons);
 
 #endif /* INC_NUMPICKER_H_ */

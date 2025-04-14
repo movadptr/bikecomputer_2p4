@@ -14,6 +14,5 @@ void EEPROM_editor(void);
 void printEditorContent(uint8_t* buff, uint8_t startindx);
 void printByte(uint8_t* buff, uint8_t startindx, uint8_t indx);
 void printCursor(uint8_t startindx, uint8_t indx);
-void modifyValue(uint8_t* buff, uint8_t indx, uint8_t startindx);
 
 #endif /* INC_EEPROM_EDITOR_H_ */

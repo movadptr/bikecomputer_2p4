@@ -11,6 +11,29 @@
 #include <stdint.h>
 #include "main.h"
 
+int32_t mypow10(int32_t exponent)
+{
+	uint32_t num = 10;
+
+	switch(exponent)
+	{
+		case 0: num = 1;
+				break;
+
+		case 1: //num = 10;
+				break;
+
+		default:	exponent--;
+					while(exponent)
+					{
+						num *= 10;
+						exponent--;
+					}
+					break;
+	}
+	return num;
+}
+
 uint8_t reverse_byte(uint8_t byte)
 {
 	byte = (byte & 0xF0) >> 4 | (byte & 0x0F) << 4;
