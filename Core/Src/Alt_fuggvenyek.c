@@ -11,6 +11,29 @@
 #include <stdint.h>
 #include "main.h"
 
+int32_t mypow16(int32_t exponent)
+{
+	uint32_t num = 16;
+
+	switch(exponent)
+	{
+		case 0: num = 1;
+				break;
+
+		case 1: //num = 10;
+				break;
+
+		default:	exponent--;
+					while(exponent)
+					{
+						num *= 16;
+						exponent--;
+					}
+					break;
+	}
+	return num;
+}
+
 int32_t mypow10(int32_t exponent)
 {
 	uint32_t num = 10;
