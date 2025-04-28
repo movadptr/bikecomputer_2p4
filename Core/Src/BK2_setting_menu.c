@@ -2,7 +2,7 @@
  * BK2_setting_menu.c
  *
  *  Created on: Aug 14, 2023
- *      Author: Póti Szabolcs
+ *  Author: Póti Szabolcs
  */
 
 
@@ -18,6 +18,7 @@
 #include "M95010_W_EEPROM.h"
 #include "motion_di.h"
 #include "EEPROM_editor.h"
+#include "numpicker.h"
 
 extern volatile uint8_t btn;
 extern volatile float curr_tyre;//kerület m-ben
@@ -184,11 +185,11 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 						write_text_V(0, 120, "Time", Pixel_on, size_5x8);
 						get_rtc_data();
 						write_character_V(2, 102, 'h', Pixel_on, size_5x8);
-						write_dec_num_time_format_V(10, 102, RTCtime.Hours, Pixel_on, size_5x8, ALIGN_LEFT);
+						write_dec_num_uint8_t_V(10, 102, RTCtime.Hours, Pixel_on, size_5x8, ALIGN_LEFT);
 						write_character_V(2, 92, 'm', Pixel_on, size_5x8);
-						write_dec_num_time_format_V(10, 92, RTCtime.Minutes, Pixel_on, size_5x8, ALIGN_LEFT);
+						write_dec_num_uint8_t_V(10, 92, RTCtime.Minutes, Pixel_on, size_5x8, ALIGN_LEFT);
 						write_character_V(2, 82, 's', Pixel_on, size_5x8);
-						write_dec_num_time_format_V(10, 82, RTCtime.Seconds, Pixel_on, size_5x8, ALIGN_LEFT);
+						write_dec_num_uint8_t_V(10, 82, RTCtime.Seconds, Pixel_on, size_5x8, ALIGN_LEFT);
 						draw_rectangle_xy_height_width(0, 100, 11, 64, Pixel_on);
 						print_disp_mat();
 
@@ -215,69 +216,16 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 
 							switch(menu_row_layer_1)
 							{
-								case 10: while(1)//choose hour
-										{
-											if( (btn == jobbgomb) && (RTCtime.Hours<23) )//értéket növel
-											{
-												fill_rectangle_xy_height_width(10, 102, 7, 11, Pixel_off);
-												RTCtime.Hours++;
-												write_dec_num_time_format_V(10, 102, RTCtime.Hours, Pixel_on, size_5x8, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime);
-											}	else{}
-											if((btn == balgomb) && (RTCtime.Hours>0))//értéket csökkent
-											{
-												fill_rectangle_xy_height_width(10, 102, 7, 11, Pixel_off);
-												RTCtime.Hours--;
-												write_dec_num_time_format_V(10, 102, RTCtime.Hours, Pixel_on, size_5x8, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime);
-											}	else{}
-											if(btn == entergomb)	{ break;}	else{} //értéket elfogad
-										}
-										break;
-								case 9:	while(1)//choose min
-										{
-											if( (btn == jobbgomb) && (RTCtime.Minutes<59) )//értéket növel
-											{
-												fill_rectangle_xy_height_width(10, 92, 7, 11, Pixel_off);
-												RTCtime.Minutes++;
-												write_dec_num_time_format_V(10, 92, RTCtime.Minutes, Pixel_on, size_5x8, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime);
-											}	else{}
-											if((btn == balgomb) && (RTCtime.Minutes>0))//értéket csökkent
-											{
-												fill_rectangle_xy_height_width(10, 92, 7, 11, Pixel_off);
-												RTCtime.Minutes--;
-												write_dec_num_time_format_V(10, 92, RTCtime.Minutes, Pixel_on, size_5x8, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime);
-											}	else{}
-											if(btn == entergomb)	{ break;}	else{} //értéket elfogad
-										}
+								case 10://set hour
+										RTCtime.Hours = numPickerUInt32_printInPlace_V(0, 23, RTCtime.Hours, &btn, 10, 102);
 										break;
 
-								case 8:	while(1)//choose sec
-										{
-											if( (btn == jobbgomb) && (RTCtime.Seconds<59) )//értéket növel
-											{
-												fill_rectangle_xy_height_width(10, 82, 7, 11, Pixel_off);
-												RTCtime.Seconds++;
-												write_dec_num_time_format_V(10, 82, RTCtime.Seconds, Pixel_on, size_5x8, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime);
-											}	else{}
-											if((btn == balgomb) && (RTCtime.Seconds>0))//értéket csökkent
-											{
-												fill_rectangle_xy_height_width(10, 82, 7, 11, Pixel_off);
-												RTCtime.Seconds--;
-												write_dec_num_time_format_V(10, 82, RTCtime.Seconds, Pixel_on, size_5x8, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime);
-											}	else{}
-											if(btn == entergomb)	{ break;}	else{} //értéket elfogad
-										}
+								case 9:	//set min
+										RTCtime.Minutes = numPickerUInt32_printInPlace_V(0, 59, RTCtime.Minutes, &btn, 10, 92);
+										break;
+
+								case 8:	//set sec
+										RTCtime.Seconds = numPickerUInt32_printInPlace_V(0, 59, RTCtime.Seconds, &btn, 10, 82);
 										break;
 							}
 						}
@@ -328,70 +276,19 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 
 							switch(menu_row_layer_1)
 							{
-								case 10: while(1)//year beállítása
-										{
-											if( (btn == jobbgomb) && (RTCdate.Year<99) )//értéket növel
-											{
-												fill_rectangle_xy_height_width(10, 102, 7, 25, Pixel_off);
-												RTCdate.Year++;
-												write_dec_num_int16_t_V(10, 102, (int16_t)(2000+RTCdate.Year), Pixel_on, size_5x8, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime);
-											}	else{}
-											if((btn == balgomb) && (RTCdate.Year>0))//értéket csökkent
-											{
-												fill_rectangle_xy_height_width(10, 102, 7, 25, Pixel_off);
-												RTCdate.Year--;
-												write_dec_num_int16_t_V(10, 102, (int16_t)(2000+RTCdate.Year), Pixel_on, size_5x8, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime);
-											}	else{}
-											if(btn == entergomb)	{ break;}	else{} //értéket elfogad
-										}
+								case 10://set year
+										RTCdate.Year = numPickerUInt32_printInPlace_V(0, 99, RTCdate.Year, &btn, 22, 102);
 										break;
-								case 9:	while(1)//month beállí­tása
-										{
-											if( (btn == jobbgomb) && (RTCdate.Month<12) )//értéket növel
-											{
-												fill_rectangle_xy_height_width(10, 92, 7, 12, Pixel_off);
-												RTCdate.Month++;
-												write_dec_num_time_format_V(10, 92, RTCdate.Month, Pixel_on, size_5x8, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime);
-											}	else{}
-											if((btn == balgomb) && (RTCdate.Month>1))//értéket csökkent
-											{
-												fill_rectangle_xy_height_width(10, 92, 7, 12, Pixel_off);
-												RTCdate.Month--;
-												write_dec_num_time_format_V(10, 92, RTCdate.Month, Pixel_on, size_5x8, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime);
-											}	else{}
-											if(btn == entergomb)	{ break;}	else{} //értéket elfogad
-										}
+
+								case 9:	//set month
+										RTCdate.Month = numPickerUInt32_printInPlace_V(0, 12, RTCdate.Month, &btn, 10, 92);
 										break;
-								case 8:	while(1)//day beállí­tása
-										{
-											if( (btn == jobbgomb) && (RTCdate.Day<31) )//értéket növel
-											{
-												fill_rectangle_xy_height_width(10, 82, 7, 12, Pixel_off);
-												RTCdate.Day++;
-												write_dec_num_time_format_V(10, 82, RTCdate.Day, Pixel_on, size_5x8, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime);
-											}	else{}
-											if((btn == balgomb) && (RTCdate.Day>1))//értéket csökkent
-											{
-												fill_rectangle_xy_height_width(10, 82, 7, 12, Pixel_off);
-												RTCdate.Day--;
-												write_dec_num_time_format_V(10, 82, RTCdate.Day, Pixel_on, size_5x8, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime);
-											}	else{}
-											if(btn == entergomb)	{ break;}	else{} //értéket elfogad
-										}
+
+								case 8:	//set day
+										RTCdate.Day = numPickerUInt32_printInPlace_V(0, 31, RTCdate.Day, &btn, 10, 82);
 										break;
-								case 7:	while(1)//weekday beállí­tása
+
+								case 7:	while(1)//set weekday
 										{
 											if( (btn == jobbgomb) && (RTCdate.WeekDay<7) )//értéket növel
 											{
@@ -480,39 +377,16 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 							case 8:		//circumference in mm
 										tmp3 = ((int16_t)( Read_M95010_W_EEPROM(EE_custom_tyre_perimeter_L) | (Read_M95010_W_EEPROM(EE_custom_tyre_perimeter_H)<<8) ));
 										delete_disp_mat();
-										write_dec_num_int16_t_V(2,80,tmp3,Pixel_on, size_10x16, ALIGN_LEFT);
 										write_text_V(52, 80, "mm", Pixel_on, size_5x8);
-										print_disp_mat();
-										while(1)
-										{
-											if( (btn == jobbgomb) && (tmp3<5000) )//értéket változtat
-											{
-												fill_rectangle_x1y1_x2y2(2, 80, 45, 96, Pixel_off);
-												tmp3++;
-												write_dec_num_int16_t_V(2, 80, tmp3,Pixel_on, size_10x16, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime_fast);
-											}	else{}
-											if( (btn == balgomb) && (tmp3>1) )//értéket változtat
-											{
-												fill_rectangle_x1y1_x2y2(2, 80, 45, 96, Pixel_off);
-												tmp3--;
-												write_dec_num_int16_t_V(2,80, tmp3,Pixel_on, size_10x16, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime_fast);
-											}	else{}
-											if(btn == entergomb )//értéket elfogad
-											{
-												Write_M95010_W_EEPROM(EE_curr_tyre_id, tyre_id_custom_perimeter);
-												Write_M95010_W_EEPROM(EE_custom_tyre_perimeter_H, (((uint16_t)tmp3 & 0xff00)>>8) );
-												Write_M95010_W_EEPROM(EE_custom_tyre_perimeter_L, ((uint16_t)tmp3 & 0x00ff) );
-												float tmp4 = ((float)tmp3/1000);//itt már méter a mértékegység
-												alldata.totdist=get_dist_for_new_tyre(curr_tyre, tmp4, alldata.totdist);
-												alldata.dist=get_dist_for_new_tyre(curr_tyre, tmp4, alldata.dist);
-												curr_tyre = tmp4;
-												break;
-											}	else{}
-										}
+										//print_disp_mat();//not necesarry numpicker has a print too in the beg of the fn
+										tmp3 = numPickerUInt32_printInPlace_V(1, 5000, tmp3, &btn, 23, 80);
+										Write_M95010_W_EEPROM(EE_curr_tyre_id, tyre_id_custom_perimeter);
+										Write_M95010_W_EEPROM(EE_custom_tyre_perimeter_H, (((uint16_t)tmp3 & 0xff00)>>8) );
+										Write_M95010_W_EEPROM(EE_custom_tyre_perimeter_L, ((uint16_t)tmp3 & 0x00ff) );
+										float tmp4 = ((float)tmp3/1000);//itt már méter a mértékegység
+										alldata.totdist=get_dist_for_new_tyre(curr_tyre, tmp4, alldata.totdist);
+										alldata.dist=get_dist_for_new_tyre(curr_tyre, tmp4, alldata.dist);
+										curr_tyre = tmp4;
 										break;
 
 							case 7:		//ETRTO értékkel való kerület megadás
@@ -546,48 +420,12 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 
 											switch(menu_row_layer_2)
 											{
-												case 10: while(1)//ETRTO1
-														{
-															if( (btn == jobbgomb) && (tmp2 < 100) )//értéket növel
-															{
-																fill_rectangle_xy_height_width(42, 102, 7, 17, Pixel_off);
-																tmp2++;
-																write_dec_num_int16_t_V(42, 102, tmp2, Pixel_on, size_5x8, ALIGN_LEFT);
-																print_disp_mat();
-																tim_delay_ms(menu_delaytime_fast);
-															}	else{}
-															if((btn == balgomb) && (tmp2 > 1))//értéket csökkent
-															{
-																fill_rectangle_xy_height_width(42, 102, 7, 17, Pixel_off);
-																tmp2--;
-																write_dec_num_int16_t_V(42, 102, tmp2, Pixel_on, size_5x8, ALIGN_LEFT);
-																print_disp_mat();
-																tim_delay_ms(menu_delaytime_fast);
-															}	else{}
-															if(btn == entergomb)	{ break;}	else{} //értéket elfogad
-														}
+												case 10://ETRTO1
+														tmp2 = numPickerUInt32_printInPlace_V(1, 99, tmp2, &btn, 42, 102);
 														break;
 
-												case 9:	while(1)//ETRTO2
-														{
-															if( (btn == jobbgomb) && (tmp3<1000) )//értéket növel
-															{
-																fill_rectangle_xy_height_width(42, 92, 7, 17, Pixel_off);
-																tmp3++;
-																write_dec_num_int16_t_V(42, 92, tmp3, Pixel_on, size_5x8, ALIGN_LEFT);
-																print_disp_mat();
-																tim_delay_ms(menu_delaytime_fast);
-															}	else{}
-															if((btn == balgomb) && (tmp3>1))//értéket csökkent
-															{
-																fill_rectangle_xy_height_width(42, 92, 7, 17, Pixel_off);
-																tmp3--;
-																write_dec_num_int16_t_V(42, 92, tmp3, Pixel_on, size_5x8, ALIGN_LEFT);
-																print_disp_mat();
-																tim_delay_ms(menu_delaytime_fast);
-															}	else{}
-															if(btn == entergomb)	{ break;}	else{} //értéket elfogad
-														}
+												case 9:	//ETRTO2
+														tmp3 = numPickerUInt32_printInPlace_V(1, 999, tmp3, &btn, 42, 92);
 														break;
 											}
 										}
@@ -625,38 +463,18 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 
 							switch(menu_row_layer_1)
 							{
-								case 10:tmp=Read_M95010_W_EEPROM(EE_PWM_duty_backlight);
-										while(1)
+								case 10://backlight PWM value
+										tmp=Read_M95010_W_EEPROM(EE_PWM_duty_backlight);
+										tmp = numPickerUInt32_printInPlace_V(0, 255, tmp, &btn, 39, 102);
+										if(tmp != LL_TIM_OC_GetCompareCH1(TIM15))//ne í­rjuk fölöslegesen az eepromot
 										{
-											if(btn == jobbgomb)//értéket változtat
-											{
-												fill_rectangle_xy_height_width(39, 102, 7, 22, Pixel_off);
-												tmp++;
-												write_dec_num_int16_t_V(39,102,(int16_t)tmp,Pixel_on, size_5x8, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime);
-											}	else{}
-											if(btn == balgomb)//értéket változtat
-											{
-												fill_rectangle_xy_height_width(39, 102, 7, 22, Pixel_off);
-												tmp--;
-												write_dec_num_int16_t_V(39,102,(int16_t)tmp,Pixel_on, size_5x8, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime);
-											}	else{}
-											if(btn == entergomb )//értéket elfogad
-											{
-												if(tmp != LL_TIM_OC_GetCompareCH1(TIM15))//ne í­rjuk fölöslegesen az eepromot
-												{
-													Write_M95010_W_EEPROM(EE_PWM_duty_backlight, tmp);
-													LL_TIM_OC_SetCompareCH1(TIM15,tmp);
-												}else{}
-												break;
-											}else{}
-										}
+											Write_M95010_W_EEPROM(EE_PWM_duty_backlight, tmp);
+											LL_TIM_OC_SetCompareCH1(TIM15,tmp);
+										}else{}
 										break;
 
-								case 9:	fill_rectangle_xy_height_width(39, 92, 7, 22, Pixel_off);
+								case 9:	//backlight on off
+										fill_rectangle_xy_height_width(39, 92, 7, 22, Pixel_off);
 										if(saved_bits & backlight_EN)
 										{
 											saved_bits &= ~backlight_EN;
@@ -673,41 +491,21 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 										print_disp_mat();
 										break;
 
-								case 8:	tmp=Read_M95010_W_EEPROM(EE_contrast);
-										while(1)
+								case 8:	//contrast
+										tmp=Read_M95010_W_EEPROM(EE_contrast);
+										tmp = numPickerUInt32_printInPlace_V(0, 63, tmp, &btn, 42, 82);
+										if(tmp != Read_M95010_W_EEPROM(EE_contrast))//ne í­rjuk fölöslegesen az eepromot
 										{
-											if(btn == jobbgomb)//értéket változtat
-											{
-												fill_rectangle_xy_height_width(39, 82, 7, 22, Pixel_off);
-												tmp++;
-												write_dec_num_int16_t_V(39, 82, tmp, Pixel_on, size_5x8, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime);
-											}	else{}
-											if(btn == balgomb)//értéket változtat
-											{
-												fill_rectangle_xy_height_width(39, 82, 7, 22, Pixel_off);
-												tmp--;
-												write_dec_num_int16_t_V(39, 82, tmp, Pixel_on, size_5x8, ALIGN_LEFT);
-												print_disp_mat();
-												tim_delay_ms(menu_delaytime);
-											}	else{}
-											if(btn == entergomb )//értéket elfogad
-											{
-												if(tmp != Read_M95010_W_EEPROM(EE_contrast))//ne í­rjuk fölöslegesen az eepromot
-												{
-													Write_M95010_W_EEPROM(EE_contrast, tmp);
-													__disable_irq();
-													LCD_send_cmd(CMD_electronic_volume_mode_set);
-													LCD_send_cmd(tmp & 0x3f);
-													__enable_irq();
-												}else{}
-												break;
-											}	else{}
-										}
+											Write_M95010_W_EEPROM(EE_contrast, tmp);
+											__disable_irq();
+											LCD_send_cmd(CMD_electronic_volume_mode_set);
+											LCD_send_cmd(tmp & 0x3f);
+											__enable_irq();
+										}else{}
 										break;
 
-								case 7:	fill_rectangle_xy_height_width(39, 72, 7, 22, Pixel_off);
+								case 7:	//normal/dark mode
+										fill_rectangle_xy_height_width(39, 72, 7, 22, Pixel_off);
 										if(saved_bits & LCD_inverted)
 										{
 											saved_bits &= ~LCD_inverted;
@@ -722,8 +520,6 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 										}
 										Write_M95010_W_EEPROM(EE_bitek, saved_bits);
 										print_disp_mat();
-										break;
-
 										break;
 
 
