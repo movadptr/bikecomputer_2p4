@@ -9,6 +9,8 @@
 #define Alt_fuggvenyek_H
 #include "stdint.h"
 
+int32_t mypow16(int32_t exponent);
+
 int32_t mypow10(int32_t exponent);
 
 uint8_t reverse_byte(uint8_t byte);
