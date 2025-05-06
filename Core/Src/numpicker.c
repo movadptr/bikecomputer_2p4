@@ -72,7 +72,7 @@ uint32_t numPickerHex_printInPlace_V(uint32_t Llimit, uint32_t Hlimit, uint32_t 
 			//modify the selected digit
 			while(1)
 			{
-				if((*buttons == jobbgomb)&& (assembleHexNum(numt)>=Llimit) && ((assembleHexNum(numt)+mypow16(iDigits))<=Hlimit))//move to next digit, to the rigt
+				if((*buttons == jobbgomb) && (assembleHexNum(numt)>=Llimit) && ((assembleHexNum(numt)+mypow16(iDigits))<=Hlimit))//move to next digit, to the rigt
 				{
 					numt[iDigits]++;
 					if(numt[iDigits] > 9)	{numt[iDigits] = 9;} else{}//overflow
@@ -178,7 +178,7 @@ uint32_t numPickerUInt32_printInPlace_V(uint32_t Llimit, uint32_t Hlimit, uint32
 			//modify the selected digit
 			while(1)
 			{
-				if((*buttons == jobbgomb)&& (assembleU32Num(numt)>=Llimit) && ((assembleU32Num(numt)+mypow10(iDigits))<=Hlimit))//move to next digit, to the rigt
+				if((*buttons == jobbgomb) && (assembleU32Num(numt)>=Llimit) && ((assembleU32Num(numt)+mypow10(iDigits))<=Hlimit))//move to next digit, to the rigt
 				{
 					numt[iDigits]++;
 					if(numt[iDigits] > 9)	{numt[iDigits] = 9;} else{}//overflow

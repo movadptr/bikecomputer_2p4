@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include "main.h"
 
-int32_t mypow16(int32_t exponent)
+uint32_t mypow16(uint32_t exponent)
 {
 	uint32_t num = 16;
 
@@ -20,7 +20,7 @@ int32_t mypow16(int32_t exponent)
 		case 0: num = 1;
 				break;
 
-		case 1: //num = 10;
+		case 1: //num = 16;
 				break;
 
 		default:	exponent--;
@@ -34,7 +34,7 @@ int32_t mypow16(int32_t exponent)
 	return num;
 }
 
-int32_t mypow10(int32_t exponent)
+uint32_t mypow10(uint32_t exponent)
 {
 	uint32_t num = 10;
 

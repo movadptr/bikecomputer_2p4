@@ -36,7 +36,7 @@ extern float Grotation[MDI_NUM_AXES];
 extern float calcSTM32temp(uint16_t rawtemp);
 uint8_t choose_row(uint8_t num_of_rows, uint8_t start_from_row);
 
-void settings(void)//TODO leváltani pár helyen az értékválasztó módot, úgy hogy számjegyeket lehessen pörgetni, ne az egész értéket
+void settings(void)
 {
 	uint8_t menu_row_layer_0=10;
 	uint8_t menu_row_layer_1=10;
@@ -494,7 +494,7 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 								case 8:	//contrast
 										tmp=Read_M95010_W_EEPROM(EE_contrast);
 										tmp = numPickerUInt32_printInPlace_V(0, 63, tmp, &btn, 42, 82);
-										if(tmp != Read_M95010_W_EEPROM(EE_contrast))//ne í­rjuk fölöslegesen az eepromot
+										if(tmp != Read_M95010_W_EEPROM(EE_contrast))//ne írjuk fölöslegesen az eepromot
 										{
 											Write_M95010_W_EEPROM(EE_contrast, tmp);
 											__disable_irq();
@@ -576,7 +576,7 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 							LL_RTC_DisableWriteProtection(RTC);
 							switch(menu_row_layer_1)
 							{
-								//smooth calibration //29 is a good calib val
+								//smooth calibration
 								case 10:		tmp= ((int16_t)(((RTC->CALR&RTC_CALR_CALP_Msk)>>RTC_CALR_CALP_Pos)*512) - (int16_t)(RTC->CALR&RTC_CALR_CALM_Msk));
 											while(1)
 											{
@@ -636,7 +636,6 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 							write_text_V(0, 70, "rawlight", Pixel_on, size_5x8);
 							write_dec_num_int16_t_V(63, 70, alldata.rawlight, Pixel_on, size_5x8, ALIGN_RIGHT);
 
-							//TODO read_acc_values();
 							write_text_V(0, 60, "yaw", Pixel_on, size_5x8);
 							write_dec_num_float_V(45, 60, Grotation[0], 2, Pixel_on, size_5x8);
 							write_text_V(0, 50, "pitch", Pixel_on, size_5x8);
@@ -660,7 +659,6 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 
 							print_disp_mat();
 							tim_delay_ms(200);
-
 						}
 						break;
 
@@ -747,9 +745,9 @@ void settings(void)//TODO leváltani pár helyen az értékválasztó módot, ú
 }
 
 /*
-  * @brief selects a row with user button inputs ion menu system
+  * @brief selects a row with user button inputs in menu system
   * @param num_of_rows - counts form zero not from one
-  * @param start_from_row - selecting wil start from this num of row
+  * @param start_from_row - selecting will start from this num of row
   * @retval None
  */
 uint8_t choose_row(uint8_t num_of_rows, uint8_t start_from_row)
