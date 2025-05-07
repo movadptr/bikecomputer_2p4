@@ -13,10 +13,7 @@
 
 //TODO make float variants
 
-
-
-//TODO test this fn and integrate to eeprom editor
-uint32_t numPickerHex_printInPlace_V(uint32_t Llimit, uint32_t Hlimit, uint32_t startval, volatile uint8_t* buttons, uint8_t xpos, uint8_t ypos)
+uint8_t numPickerHex_printInPlace_V(uint8_t Llimit, uint8_t Hlimit, uint8_t startval, volatile uint8_t* buttons, uint8_t xpos, uint8_t ypos)
 {
 	*buttons = 0;
 
@@ -25,10 +22,8 @@ uint32_t numPickerHex_printInPlace_V(uint32_t Llimit, uint32_t Hlimit, uint32_t 
 	const uint8_t digitXPosT[2] = {xpos, xpos+digitSelWidth};//var for digit x positions
 
 	uint8_t numt[2]={0};
-	numt[0]=((startval/1)%16);
-	numt[1]=((startval/16)%16);
+	disassembleHexNum(numt, startval);
 
-	//print initial cursor
 	fill_rectangle_xy_height_width(digitXPosT[0]-1, ypos-1, 9, 7, Pixel_on);//initial cursor pos
 	//print initial value
 	if(numt[0]>9)	{ write_character_V(digitXPosT[0], ypos, numt[0]+('A'-10), Pixel_off, size_5x8);	}
@@ -44,25 +39,25 @@ uint32_t numPickerHex_printInPlace_V(uint32_t Llimit, uint32_t Hlimit, uint32_t 
 		//select the digit
 		if( (*buttons == balgomb) && (iDigits < (numOfDigits-1)) )//move to next digit, to the left
 		{
-			fill_rectangle_xy_height_width(digitXPosT[iDigits]-1, ypos-1, 9, 7, Pixel_off);//delete prev cursor and num (inverted display mode)
+			fill_rectangle_xy_height_width(digitXPosT[iDigits]-1, ypos-1, 9, 7, Pixel_off);//delete prev cursor and num
 			if(numt[iDigits]>9)	{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+('A'-10), Pixel_on, size_5x8);	}//reprint num with normal display mode mode
-			else				{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+'0', Pixel_on, size_5x8);}		 //
+			else				{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+'0', Pixel_on, size_5x8);}      //
 			iDigits++;
-			fill_rectangle_xy_height_width(digitXPosT[iDigits]-1, ypos-1, 9, 7, Pixel_on);//print cursor (inverted display mode)
-			if(numt[iDigits]>9)	{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+('A'-10), Pixel_on, size_5x8);	}//print num with inverted display mode
-			else				{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+'0', Pixel_off, size_5x8);}		 //
+			fill_rectangle_xy_height_width(digitXPosT[iDigits]-1, ypos-1, 9, 7, Pixel_on);//print cursor
+			if(numt[iDigits]>9)	{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+('A'-10), Pixel_off, size_5x8); }//print num with inverted display mode
+			else				{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+'0', Pixel_off, size_5x8);}      //
 			print_disp_mat();
 			tim_delay_ms(menu_delaytime);
 		}	else{}
 		if( (*buttons == jobbgomb) && (iDigits > 0) )//move to prev digit, to the right
 		{
-			fill_rectangle_xy_height_width(digitXPosT[iDigits]-1, ypos-1, 9, 7, Pixel_off);//delete prev cursor and num (inverted display mode)
+			fill_rectangle_xy_height_width(digitXPosT[iDigits]-1, ypos-1, 9, 7, Pixel_off);//delete prev cursor and num
 			if(numt[iDigits]>9)	{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+('A'-10), Pixel_on, size_5x8);	}//reprint num with normal display mode mode
-			else				{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+'0', Pixel_on, size_5x8);}		 //
+			else				{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+'0', Pixel_on, size_5x8);}      //
 			iDigits--;
-			fill_rectangle_xy_height_width(digitXPosT[iDigits]-1, ypos-1, 9, 7, Pixel_on);//print cursor (inverted display mode)
-			if(numt[iDigits]>9)	{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+('A'-10), Pixel_on, size_5x8);	}//print num with inverted display mode
-			else				{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+'0', Pixel_off, size_5x8);}		 //
+			fill_rectangle_xy_height_width(digitXPosT[iDigits]-1, ypos-1, 9, 7, Pixel_on);//print cursor
+			if(numt[iDigits]>9)	{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+('A'-10), Pixel_off, size_5x8); }//print num with inverted display mode
+			else				{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+'0', Pixel_off, size_5x8);}      //
 			print_disp_mat();
 			tim_delay_ms(menu_delaytime);
 		}	else{}
@@ -72,13 +67,13 @@ uint32_t numPickerHex_printInPlace_V(uint32_t Llimit, uint32_t Hlimit, uint32_t 
 			//modify the selected digit
 			while(1)
 			{
-				if((*buttons == jobbgomb) && (assembleHexNum(numt)>=Llimit) && ((assembleHexNum(numt)+mypow16(iDigits))<=Hlimit))//move to next digit, to the rigt
+				if((*buttons == jobbgomb)&& (assembleHexNum(numt)>=Llimit) && ((assembleHexNum(numt)+mypow16(iDigits))<=Hlimit))//move to next digit, to the rigt
 				{
 					numt[iDigits]++;
 					if(numt[iDigits] > 9)	{numt[iDigits] = 9;} else{}//overflow
 					fill_rectangle_xy_height_width(digitXPosT[iDigits], ypos, 7, 5, Pixel_on);//delete prev num
-					if(numt[iDigits]>9)	{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+('A'-10), Pixel_on, size_5x8);	}//print num with inverted display mode
-					else				{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+'0', Pixel_off, size_5x8);}		 //
+					if(numt[iDigits]>9)	{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+('A'-10), Pixel_off, size_5x8);	}//print num with inverted display mode
+					else				{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+'0', Pixel_off, size_5x8);}     //
 					print_disp_mat();
 					tim_delay_ms(menu_delaytime);
 				}	else{}
@@ -87,8 +82,8 @@ uint32_t numPickerHex_printInPlace_V(uint32_t Llimit, uint32_t Hlimit, uint32_t 
 					numt[iDigits]--;
 					if(numt[iDigits] > 9)	{numt[iDigits] = 0;} else{}//underflow
 					fill_rectangle_xy_height_width(digitXPosT[iDigits], ypos, 7, 5, Pixel_on);//delete prev num
-					if(numt[iDigits]>9)	{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+('A'-10), Pixel_on, size_5x8);	}//print num with inverted display mode
-					else				{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+'0', Pixel_off, size_5x8);}		 //
+					if(numt[iDigits]>9)	{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+('A'-10), Pixel_off, size_5x8);	}//print num with inverted display mode
+					else				{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+'0', Pixel_off, size_5x8);}     //
 					print_disp_mat();
 					tim_delay_ms(menu_delaytime);
 				}	else{}
@@ -99,7 +94,6 @@ uint32_t numPickerHex_printInPlace_V(uint32_t Llimit, uint32_t Hlimit, uint32_t 
 					break;
 				}	else{}
 			}
-
 		}	else{}
 		if(*buttons == exitgomb)//exit from num picker
 		{
@@ -115,7 +109,7 @@ uint32_t numPickerHex_printInPlace_V(uint32_t Llimit, uint32_t Hlimit, uint32_t 
 	print_disp_mat();
 
 	//assemble the retun value
-	return assembleU32Num(numt);
+	return assembleHexNum(numt);
 }
 
 
@@ -178,7 +172,7 @@ uint32_t numPickerUInt32_printInPlace_V(uint32_t Llimit, uint32_t Hlimit, uint32
 			//modify the selected digit
 			while(1)
 			{
-				if((*buttons == jobbgomb) && (assembleU32Num(numt)>=Llimit) && ((assembleU32Num(numt)+mypow10(iDigits))<=Hlimit))//move to next digit, to the rigt
+				if((*buttons == jobbgomb)&& (assembleU32Num(numt)>=Llimit) && ((assembleU32Num(numt)+mypow10(iDigits))<=Hlimit))//move to next digit, to the rigt
 				{
 					numt[iDigits]++;
 					if(numt[iDigits] > 9)	{numt[iDigits] = 9;} else{}//overflow
