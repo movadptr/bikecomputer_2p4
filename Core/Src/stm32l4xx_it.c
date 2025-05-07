@@ -26,6 +26,8 @@
 #include "disp_fgv.h"
 #include "math.h"
 #include "app_mems.h"
+#include "ism330dhcx.h"
+#include "custom_motion_sensors.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -75,6 +77,7 @@ volatile float prev_v = 0, curr_v = 0;//previous and current velocity in m/s
 volatile uint8_t flashlight_toggle_cnt = 0;
 extern volatile uint8_t flashlight_blink_val;
 
+extern void *MotionCompObj[CUSTOM_MOTION_INSTANCES_NBR];
 
 void (*GameMainIsrPntr)() = NULL;
 void (*GameBtnIsrPntr)() = NULL;
@@ -625,6 +628,10 @@ void RTC_Alarm_IRQHandler(void)
 			write_main_page_data();
 			print_disp_mat();
 		}else{}
+
+		int16_t acc_temp_raw = 0;
+		ism330dhcx_temperature_raw_get(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, &acc_temp_raw);
+		alldata.acc_tempsensor = ((float)acc_temp_raw / ISM330DHCX_TEMP_LSB_PER_C) + ISM330DHCX_TEMP_BASE_T;
 
 		if(LL_ADC_IsActiveFlag_ADRDY(ADC1))
 		{
