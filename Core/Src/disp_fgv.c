@@ -35,8 +35,6 @@ uint8_t charwidth=0;
 
 //____________________print in vertical orientation________________________________//
 
-
-//TODO test this fn
 //TODO make _H variant
 uint8_t write_hex_byte_V(uint8_t col, uint8_t row, uint8_t num, uint8_t Pixel_Status, uint8_t size, uint8_t align)
 {

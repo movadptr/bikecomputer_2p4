@@ -300,7 +300,7 @@ int main(void)
   * @param None
   * @retval None
   */
-static void TIM1_Init(void)//todo commit
+static void TIM1_Init(void)
 {
 	//TIM1 interrupt Init
 	NVIC_SetPriority(TIM1_BRK_TIM15_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
@@ -560,7 +560,7 @@ static void SPI1_Init(void)
   * @param None
   * @retval None
   */
-static void TIM2_Init(void) //TODO coomit
+static void TIM2_Init(void)
 {
 	// TIM2 interrupt Init
 	NVIC_SetPriority(TIM2_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
@@ -1413,7 +1413,7 @@ static void init(void)
 }
 
 
-void ClockConfig(void)//todo commit
+void ClockConfig(void)
 {
 	LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
 	while(LL_FLASH_GetLatency()!= LL_FLASH_LATENCY_2)

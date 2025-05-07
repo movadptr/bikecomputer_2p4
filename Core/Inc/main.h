@@ -83,7 +83,7 @@ typedef struct
 	volatile uint16_t rawlight;		//nincs mért.egys, csak egy dimenzió nélküli szám az adc-ből
 	volatile uint16_t rawvrefint;	//nincs mért.egys, csak egy dimenzió nélküli szám az adc-ből
 	volatile float acc_tempsensor;		//°C
-	volatile uint16_t rawtempsensor;//nincs mért.egys, csak egy dimenzió nélküli szám az adc-ből
+	volatile uint16_t uc_tempsensor_rawtemp;//nincs mért.egys, csak egy dimenzió nélküli szám az adc-ből
 }bkdata;
 
 typedef struct

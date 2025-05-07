@@ -87,8 +87,7 @@ void EEPROM_editor(void)
 							break;
 			//modify
 			case (entergomb|exitgomb):	tim_delay_ms(menu_delaytime);
-										//TODO test this
-										memBuf[memIndex] = numPickerHex_printInPlace_V(0x00, 0xff, memBuf[memIndex], &btn, (memIndex%2==0)?16:33, 102-((memIndex-displayedMemSectionBeg)*5));//*5 -> ÷2 *10
+										memBuf[memIndex] = numPickerHex_printInPlace_V(0x00, 0xff, memBuf[memIndex], &btn, (memIndex%2==0)?16:33, 102-(((memIndex&0xfe)-displayedMemSectionBeg)*5));//*5 -> ÷2 *10;  &0xfe -> needed because if memindex is odd it will shift the cursor
 										break;
 
 			default:	break;

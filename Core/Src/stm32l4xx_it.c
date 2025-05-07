@@ -254,7 +254,7 @@ void DMA1_Channel1_IRQHandler(void)
 		alldata.rawbatt = adc_conv_results[0];
 		alldata.rawlight = adc_conv_results[1];
 		alldata.rawvrefint = adc_conv_results[2];
-		alldata.rawtempsensor = adc_conv_results[3];
+		alldata.uc_tempsensor_rawtemp = adc_conv_results[3];
 
 		calculate_batt_voltage(adc_conv_results[0], adc_conv_results[2]);
 	}

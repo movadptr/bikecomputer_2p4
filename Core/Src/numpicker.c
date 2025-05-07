@@ -19,7 +19,7 @@ uint8_t numPickerHex_printInPlace_V(uint8_t Llimit, uint8_t Hlimit, uint8_t star
 
 	const uint8_t digitSelWidth = 6;
 	const uint8_t numOfDigits = 2;//amount of hexadecimal digits
-	const uint8_t digitXPosT[2] = {xpos, xpos+digitSelWidth};//var for digit x positions
+	const uint8_t digitXPosT[2] = {xpos+digitSelWidth, xpos};//var for digit x positions
 
 	uint8_t numt[2]={0};
 	disassembleHexNum(numt, startval);
@@ -28,8 +28,6 @@ uint8_t numPickerHex_printInPlace_V(uint8_t Llimit, uint8_t Hlimit, uint8_t star
 	//print initial value
 	if(numt[0]>9)	{ write_character_V(digitXPosT[0], ypos, numt[0]+('A'-10), Pixel_off, size_5x8);	}
 	else			{ write_character_V(digitXPosT[0], ypos, numt[0]+'0', Pixel_off, size_5x8);}
-	if(numt[1]>9)	{ write_character_V(digitXPosT[1], ypos, numt[1]+('A'-10), Pixel_on, size_5x8);	}
-	else			{ write_character_V(digitXPosT[1], ypos, numt[1]+'0', Pixel_on, size_5x8);}
 	print_disp_mat();
 
 	uint8_t iDigits = 0;//index
@@ -40,7 +38,7 @@ uint8_t numPickerHex_printInPlace_V(uint8_t Llimit, uint8_t Hlimit, uint8_t star
 		if( (*buttons == balgomb) && (iDigits < (numOfDigits-1)) )//move to next digit, to the left
 		{
 			fill_rectangle_xy_height_width(digitXPosT[iDigits]-1, ypos-1, 9, 7, Pixel_off);//delete prev cursor and num
-			if(numt[iDigits]>9)	{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+('A'-10), Pixel_on, size_5x8);	}//reprint num with normal display mode mode
+			if(numt[iDigits]>9)	{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+('A'-10), Pixel_on, size_5x8);	}//reprint num with normal display mode
 			else				{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+'0', Pixel_on, size_5x8);}      //
 			iDigits++;
 			fill_rectangle_xy_height_width(digitXPosT[iDigits]-1, ypos-1, 9, 7, Pixel_on);//print cursor
@@ -52,7 +50,7 @@ uint8_t numPickerHex_printInPlace_V(uint8_t Llimit, uint8_t Hlimit, uint8_t star
 		if( (*buttons == jobbgomb) && (iDigits > 0) )//move to prev digit, to the right
 		{
 			fill_rectangle_xy_height_width(digitXPosT[iDigits]-1, ypos-1, 9, 7, Pixel_off);//delete prev cursor and num
-			if(numt[iDigits]>9)	{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+('A'-10), Pixel_on, size_5x8);	}//reprint num with normal display mode mode
+			if(numt[iDigits]>9)	{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+('A'-10), Pixel_on, size_5x8);	}//reprint num with normal display mode
 			else				{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+'0', Pixel_on, size_5x8);}      //
 			iDigits--;
 			fill_rectangle_xy_height_width(digitXPosT[iDigits]-1, ypos-1, 9, 7, Pixel_on);//print cursor
@@ -67,10 +65,10 @@ uint8_t numPickerHex_printInPlace_V(uint8_t Llimit, uint8_t Hlimit, uint8_t star
 			//modify the selected digit
 			while(1)
 			{
-				if((*buttons == jobbgomb)&& (assembleHexNum(numt)>=Llimit) && ((assembleHexNum(numt)+mypow16(iDigits))<=Hlimit))//move to next digit, to the rigt
+				if((*buttons == jobbgomb) && (assembleHexNum(numt)>=Llimit) && ((assembleHexNum(numt)+mypow16(iDigits))<=Hlimit))//move to next digit, to the rigt
 				{
 					numt[iDigits]++;
-					if(numt[iDigits] > 9)	{numt[iDigits] = 9;} else{}//overflow
+					if(numt[iDigits] > 15)	{numt[iDigits] = 15;} else{}//overflow
 					fill_rectangle_xy_height_width(digitXPosT[iDigits], ypos, 7, 5, Pixel_on);//delete prev num
 					if(numt[iDigits]>9)	{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+('A'-10), Pixel_off, size_5x8);	}//print num with inverted display mode
 					else				{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+'0', Pixel_off, size_5x8);}     //
@@ -80,7 +78,7 @@ uint8_t numPickerHex_printInPlace_V(uint8_t Llimit, uint8_t Hlimit, uint8_t star
 				if((*buttons == balgomb) && ((assembleHexNum(numt)-mypow16(iDigits))>=Llimit) && (assembleHexNum(numt)<=Hlimit))//move to prev digit, to the left
 				{
 					numt[iDigits]--;
-					if(numt[iDigits] > 9)	{numt[iDigits] = 0;} else{}//underflow
+					if(numt[iDigits] > 15)	{numt[iDigits] = 0;} else{}//underflow
 					fill_rectangle_xy_height_width(digitXPosT[iDigits], ypos, 7, 5, Pixel_on);//delete prev num
 					if(numt[iDigits]>9)	{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+('A'-10), Pixel_off, size_5x8);	}//print num with inverted display mode
 					else				{ write_character_V(digitXPosT[iDigits], ypos, numt[iDigits]+'0', Pixel_off, size_5x8);}     //

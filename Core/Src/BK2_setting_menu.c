@@ -643,16 +643,22 @@ void settings(void)
 							write_text_V(0, 40, "roll", Pixel_on, size_5x8);
 							write_dec_num_float_V(45, 40, Grotation[2], 2, Pixel_on, size_5x8);
 
-							//TODO alldata.acc_tempsensor = (((float)read_acc_temperature() / 10) + temperature_calib_val);
+
 							write_text_V(0, 30, "CPU_T", Pixel_on, size_5x8);
-							write_dec_num_float_V(48, 30, calcSTM32temp(alldata.rawtempsensor), 1 , Pixel_on, size_5x8);
+							write_dec_num_float_V(48, 30, calcSTM32temp(alldata.uc_tempsensor_rawtemp), 1 , Pixel_on, size_5x8);
 							setpixel(56, 36, Pixel_on);
 							setpixel(57, 37, Pixel_on);
 							setpixel(57, 35, Pixel_on);
 							setpixel(58, 36, Pixel_on);
 							write_character_V(59, 30, 'C', Pixel_on, size_5x8);
 
-							//write_text_V(0, 20, " ", Pixel_on, size_5x8);
+							write_text_V(0, 20, "PCB_T", Pixel_on, size_5x8);
+							write_dec_num_float_V(48, 20, alldata.acc_tempsensor, 1 , Pixel_on, size_5x8);
+							setpixel(56, 26, Pixel_on);
+							setpixel(57, 27, Pixel_on);
+							setpixel(57, 25, Pixel_on);
+							setpixel(58, 26, Pixel_on);
+							write_character_V(59, 20, 'C', Pixel_on, size_5x8);
 
 							write_text_V(0, 10, SW_ver, Pixel_on, size_5x8);
 							write_text_V(0, 0, build_date, Pixel_on, size_5x8);

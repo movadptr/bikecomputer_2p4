@@ -10,7 +10,8 @@
 
 #include <stdint.h>
 #include "Fonts_and_bitmaps_FLASH.h"
-//TODO minden üres karakterhez bepakolni a pont bitmintáját hogy az eeprom editornál ne junk jelenjen meg ha éppen egy ilyen karakter lenne ott
+
+//amelyik karakter után "--" van rakva kommentben, az a karkter nincs ábrázolva, a pont karakter bitmintája van bepakolva oda
 constant uint8_t _5x8chars[450]={ 0xFD,0xCC,0x00,0x00,0x00,//!		| ASCII kód szerint sorban
 								  0x01,0xCC,0x00,0x00,0x00,//" --	V
 								  0x01,0xCC,0x00,0x00,0x00,//# --
