@@ -87,7 +87,8 @@ void EEPROM_editor(void)
 							break;
 			//modify
 			case (entergomb|exitgomb):	tim_delay_ms(menu_delaytime);
-										memBuf[memIndex] = numPickerUInt32_V(0x00, 0xff, memBuf[memIndex], &btn);
+										//TODO test this
+										memBuf[memIndex] = numPickerHex_printInPlace_V(0x00, 0xff, memBuf[memIndex], &btn, (memIndex%2==0)?16:33, 102-((memIndex-displayedMemSectionBeg)*5));//*5 -> ÷2 *10
 										break;
 
 			default:	break;
@@ -117,9 +118,8 @@ void printByte(uint8_t* buff, uint8_t startindx, uint8_t indx)
 		//ascii representation
 		fill_rectangle_xy_height_width(51, 102-((pos/2)*10), 8, 5, Pixel_off);
 		write_character_V(51, 102-((pos/2)*10), ((buff[indx]>='!')&&(buff[indx]<='z')) ? buff[indx] : '.', Pixel_on, size_5x8);
-
 	}
-	else//odd indeces go to thre right side
+	else//odd indeces go to the right side
 	{
 		//write byte
 		fill_rectangle_xy_height_width(33, 102-((pos/2)*10), 7, 11, Pixel_off);
