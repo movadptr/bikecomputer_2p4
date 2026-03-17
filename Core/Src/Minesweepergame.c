@@ -51,14 +51,14 @@
 #define void_id				10U
 
 int Minesweepergame(void);
-void MS_init(uint8_t** MS_mat);
-void MS_print(uint8_t** MS_mat);
-uint8_t ismember_(uint16_t* ptf, uint16_t num);//return 1 ha ptf tömbben van olyan elem mint a num; egyébként return 0
+static void MS_init(uint8_t** MS_mat);
+static void MS_print(uint8_t** MS_mat);
+static uint8_t ismember_(uint16_t* ptf, uint16_t num);//return 1 ha ptf tömbben van olyan elem mint a num; egyébként return 0
 #define end_num		((_MS_blocks_y*_MS_blocks_x)+1)//ez jelzi a tömb végét amiben az ismember_() keres
-void MS_game_over(uint8_t** MS_mat);
-uint8_t reveale_cell_env(uint8_t MSyf, uint8_t MSxf, uint8_t** MS_mat);
-void reveale_void_field(uint8_t MSyf, uint8_t MSxf, uint8_t** MS_mat);
-uint8_t win(int8_t mines_left, uint8_t** MS_mat);
+static void MS_game_over(uint8_t** MS_mat);
+static uint8_t reveale_cell_env(uint8_t MSyf, uint8_t MSxf, uint8_t** MS_mat);
+static void reveale_void_field(uint8_t MSyf, uint8_t MSxf, uint8_t** MS_mat);
+static uint8_t win(int8_t mines_left, uint8_t** MS_mat);
 
 extern volatile uint8_t btn;
 
@@ -157,7 +157,7 @@ int Minesweepergame(void)
 
 /////////////////////////////////////////////////////////////////
 
-uint8_t win(int8_t mines_leftf, uint8_t** MS_mat)
+static uint8_t win(int8_t mines_leftf, uint8_t** MS_mat)
 {
 	if(mines_leftf == 0)//ha van felfedetlen cella akkor még nem nyert, akkor se ha van rajta flag
 	{
@@ -210,7 +210,7 @@ uint8_t win(int8_t mines_leftf, uint8_t** MS_mat)
 	else{ return 0;}
 }*/
 
-void reveale_void_field(uint8_t MSyf, uint8_t MSxf, uint8_t** MS_mat)
+static void reveale_void_field(uint8_t MSyf, uint8_t MSxf, uint8_t** MS_mat)
 {
 	MS_mat[MSyf][MSxf]+=void_id;//kezdő void cella felfedése
 	int8_t yj, xj;
@@ -264,7 +264,7 @@ void reveale_void_field(uint8_t MSyf, uint8_t MSxf, uint8_t** MS_mat)
 	}
 }*/
 
-uint8_t reveale_cell_env(uint8_t MSyf, uint8_t MSxf, uint8_t** MS_mat)
+static uint8_t reveale_cell_env(uint8_t MSyf, uint8_t MSxf, uint8_t** MS_mat)
 {
 	int8_t yj, xj, dm=0;
 	for(yj=-1; yj<2; yj++)
@@ -285,7 +285,7 @@ uint8_t reveale_cell_env(uint8_t MSyf, uint8_t MSxf, uint8_t** MS_mat)
 	return dm;
 }
 
-void MS_game_over(uint8_t** MS_mat)
+static void MS_game_over(uint8_t** MS_mat)
 {
 	//todo másodpercek számolását leállítani
 	uint8_t ix=0, iy=0;
@@ -304,7 +304,7 @@ void MS_game_over(uint8_t** MS_mat)
 	while(!btn)	{ asm("nop");}//gombnyomásra fejeződik be a játék
 }
 
-uint8_t ismember_(uint16_t* ptf, uint16_t num)
+static uint8_t ismember_(uint16_t* ptf, uint16_t num)
 {
 	uint8_t k=0;
 	while( ptf[k] != end_num )//
@@ -314,7 +314,7 @@ uint8_t ismember_(uint16_t* ptf, uint16_t num)
 	return 0;
 }
 
-void MS_print(uint8_t** MS_mat)
+static void MS_print(uint8_t** MS_mat)
 {
 	uint8_t ix=0, iy=0;
 	fill_rectangle_x1y1_x2y2(0, 0, _MS_blocks_x*(_blocksize-1), _MS_blocks_y*(_blocksize-1), Pixel_off);//játéktér törlése
@@ -371,7 +371,7 @@ void MS_print(uint8_t** MS_mat)
 	print_disp_mat();
 }
 
-void MS_init(uint8_t** MS_mat)
+static void MS_init(uint8_t** MS_mat)
 {
 	uint8_t tmp=0;//futó változó
 	uint16_t tmp2=0;

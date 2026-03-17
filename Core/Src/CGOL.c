@@ -20,10 +20,12 @@
 #include <string.h>
 
 void Conway_s_game_of_life(void);
-void setpix(uint8_t** mat, uint8_t x, uint8_t y, uint8_t Pixel_status);
+static void setpix(uint8_t x, uint8_t y, uint8_t Pixel_status);
 
 extern volatile uint8_t btn;
-extern uint8_t disp_mat[pixels_y][pixels_x/8];
+extern uint8_t disp_mat[pixels_x/8][pixels_y];
+
+uint8_t tt[pixels_x/8][pixels_y]={0};
 
 constant uint8_t bmp_conway_infinite_growth[]={26,49,0x38,0x24,0x20,0x20,0x14,0x00,0x03,0x04,0x04,0x08,0x00,0x04,0x03,0x00,0x00,0x00,0x00,0x00,0x00,
 														0x40,0x82,0x83,0xFA,0x00,0x00,0x00,0xFA,0x83,0x82,0x40,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -42,16 +44,9 @@ constant uint8_t bmp_conway_infinite_growth[]={26,49,0x38,0x24,0x20,0x20,0x14,0x
 void Conway_s_game_of_life(void)
 {
 	uint8_t cgy, cgx;
-	uint8_t tt_[pixels_y][pixels_x/8]={0};
-	uint8_t* tt[pixels_y];
 	int8_t iy=0, ix=0, db=0;
 	uint8_t jy=0, jx=0;
-	while(jy<(pixels_y))
-	{
-		tt[jy]=tt_[jy];
-		jy++;
-	}
-	uint8_t backup[pixels_y][pixels_x/8];
+	uint8_t backup[pixels_x/8][pixels_y];
 	delete_disp_mat();
 
 	print_bmp_H(38, 42, bmp_conway_infinite_growth, Pixel_on, Overwrite);//make a starting pattern //todo kéne csinálni egy pattern könyvtárat
@@ -72,7 +67,7 @@ void Conway_s_game_of_life(void)
 			if( (cgy > 0) && (btn == balgomb))				{ cgx--;}
 			if( btn == (entergomb|exitgomb) )
 			{
-				if( disp_mat[cgy][cgx/8] & (1<<(cgx%8)) )	{ setpixel(cgx, cgy, Pixel_off);}	else{ setpixel(cgx, cgy, Pixel_on);}//pixel rajzolás
+				if( disp_mat[cgx/8][cgy] & (1<<(cgx%8)) )	{ setpixel(cgx, cgy, Pixel_off);}	else{ setpixel(cgx, cgy, Pixel_on);}//pixel rajzolás
 				print_disp_mat();
 			}
 			if( btn == (balgomb | jobbgomb) )	{ btn=0; break;}//start
@@ -82,7 +77,7 @@ void Conway_s_game_of_life(void)
 		{
 			for(jx=0; jx<(pixels_x/8); jx++)
 			{
-				backup[jy][jx] = disp_mat[jy][jx];
+				backup[jx][jy] = disp_mat[jx][jy];
 			}
 		}
 		LL_mDelay(300);
@@ -99,8 +94,8 @@ void Conway_s_game_of_life(void)
 										{
 											for(jx=0; jx<(pixels_x/8); jx++)
 											{
-												tt[jy][jx] = 0;
-												backup[jy][jx] = 0;
+												tt[jx][jy] = 0;
+												backup[jx][jy] = 0;
 											}
 										}
 										break;
@@ -117,17 +112,17 @@ void Conway_s_game_of_life(void)
 						{
 							if( (((cgy+iy) >= 0) && ((cgy+iy) < pixels_y)) && (((cgx+ix) >= 0) && ((cgx+ix) < pixels_x)) && (iy || ix) )//túlcímzés elkerülése, önmagát ne számolja bele
 							{
-								if( disp_mat[cgy+iy][(cgx+ix)/8] & (1<<((cgx+ix)%8)) )
+								if( disp_mat[(cgx+ix)/8][cgy+iy] & (1<<((cgx+ix)%8)) )
 								{
 									db++;
 								}
 							}
 						}
 					}
-					if( (db==3) || ((db==2) && (disp_mat[cgy][cgx/8] & (1<<(cgx%8)))) )	{ setpix(tt, cgx, cgy, Pixel_on);}//become alive, stay alive
+					if( (db==3) || ((db==2) && (disp_mat[cgx/8][cgy] & (1<<(cgx%8)))) )	{ setpix(cgx, cgy, Pixel_on);}//become alive, stay alive
 					else
 					{
-						if((db<2) || (db>3))	{ setpix(tt, cgx, cgy, Pixel_off);}	else{}//die
+						if((db<2) || (db>3))	{ setpix(cgx, cgy, Pixel_off);}	else{}//die
 					}
 				}
 			}
@@ -136,8 +131,8 @@ void Conway_s_game_of_life(void)
 			{
 				for(jx=0; jx<(pixels_x/8); jx++)
 				{
-					disp_mat[jy][jx] = tt[jy][jx];
-					tt[jy][jx] = 0;
+					disp_mat[jx][jy] = tt[jx][jy];
+					tt[jx][jy] = 0;
 				}
 			}
 			print_disp_mat();
@@ -146,7 +141,7 @@ void Conway_s_game_of_life(void)
 		{
 			for(jx=0; jx<(pixels_x/8); jx++)
 			{
-				disp_mat[jy][jx] = backup[jy][jx];
+				disp_mat[jx][jy] = backup[jx][jy];
 			}
 		}
 		print_disp_mat();
@@ -155,7 +150,7 @@ void Conway_s_game_of_life(void)
 }
 
 
-void setpix(uint8_t** mat, uint8_t x, uint8_t y, uint8_t Pixel_status)
+static void setpix(uint8_t x, uint8_t y, uint8_t Pixel_status)
 {
 	if((/*(x>=0)&&*/(x<pixels_x))&&(/*(y>=0)&&*/(y<pixels_y)))
 	{
@@ -164,13 +159,13 @@ void setpix(uint8_t** mat, uint8_t x, uint8_t y, uint8_t Pixel_status)
 		dotinpage=(0x01<<(x%8));
 		if(Pixel_status == Pixel_on)
 		{
-			mat[y][page] |= dotinpage;
+			tt[page][y] |= dotinpage;
 		}
 		else
 		{
 			if(Pixel_status == Pixel_off)
 			{
-				mat[y][page] &= (~dotinpage);
+				tt[page][y] &= (~dotinpage);
 			}	else{}
 		}
 	}	else{}

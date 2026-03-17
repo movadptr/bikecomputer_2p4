@@ -14,7 +14,7 @@
 #include "M95010_W_EEPROM.h"
 
 extern SPI_HandleTypeDef hspi1;
-extern uint8_t disp_mat[pixels_y][pixels_x/8];
+extern uint8_t disp_mat[pixels_x/8][pixels_y];
 extern volatile uint8_t bitek;
 extern uint8_t saved_bits;
 
@@ -29,7 +29,7 @@ void print_disp_mat(void)
 		LL_GPIO_SetOutputPin(LCD_DC_GPIO_Port, LCD_DC_Pin);
 		for(j=0; j<pixels_y; j++)
 		{
-			HAL_SPI_Transmit(&hspi1, &disp_mat[j][i], 1, 1000);
+			HAL_SPI_Transmit(&hspi1, &disp_mat[i][j], 1, 1000);
 		}
 		LL_GPIO_ResetOutputPin(LCD_DC_GPIO_Port, LCD_DC_Pin);
 		LL_GPIO_SetOutputPin(LCD_CS_GPIO_Port, LCD_CS_Pin);

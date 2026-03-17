@@ -21,19 +21,19 @@
 #define _TETR_blocks_y	31
 
 int tetrisgame(void);
-void TETR_print(unsigned char **envmx2f);
-void add(unsigned char **envmx2f,unsigned char *item_posf);
-unsigned char check_spawn(unsigned char **envmx2f, unsigned char *item_posf);
-unsigned char *movdown(unsigned char **envmx2f, unsigned char *item_posf);
-unsigned char *movleft(unsigned char **envmx2f, unsigned char *item_posf);
-unsigned char *movright(unsigned char **envmx2f, unsigned char *item_posf);
-unsigned char *putdown(unsigned char **envmx2f, unsigned char *item_posf);
-void item_pos_reset(unsigned char *item_posf, unsigned char *itemstartpos);
-void item_1_2(unsigned char **envmx2f, unsigned char *item_posf);
-void rotateMatrix(unsigned char mat[][4]);/////
-unsigned char *rotate(unsigned char **envmx2f, unsigned char *item_posf);
-void Tgame_over(void);
-void draw_next_item(void);
+static void TETR_print(unsigned char **envmx2f);
+static void add(unsigned char **envmx2f,unsigned char *item_posf);
+static unsigned char check_spawn(unsigned char **envmx2f, unsigned char *item_posf);
+static unsigned char *movdown(unsigned char **envmx2f, unsigned char *item_posf);
+static unsigned char *movleft(unsigned char **envmx2f, unsigned char *item_posf);
+static unsigned char *movright(unsigned char **envmx2f, unsigned char *item_posf);
+static unsigned char *putdown(unsigned char **envmx2f, unsigned char *item_posf);
+static void item_pos_reset(unsigned char *item_posf, unsigned char *itemstartpos);
+static void item_1_2(unsigned char **envmx2f, unsigned char *item_posf);
+static void rotateMatrix(unsigned char mat[][4]);/////
+static unsigned char *rotate(unsigned char **envmx2f, unsigned char *item_posf);
+static void Tgame_over(void);
+static void draw_next_item(void);
 
 void Tgame_main_isr(void);
 void Tgame_button_isr(void);
@@ -256,7 +256,7 @@ void Tgame_main_isr(void)//a meghívást timer megszakításba rakni
 //////////////////////////////////////////////
 
 
-void draw_next_item(void)
+static void draw_next_item(void)
 {
 	fill_rectangle_x1y1_x2y2(50, 100, 63, 109, Pixel_off);
 	for(uint8_t i=0; i<8; i+=2)
@@ -304,7 +304,7 @@ void draw_next_item(void)
 	}*/
 }
 
-void Tgame_over(void)
+static void Tgame_over(void)
 {
 	Tgame_status=1;
 	game_main_isr_presc_cmp_val = 0;
@@ -316,7 +316,7 @@ void Tgame_over(void)
 	print_disp_mat();
 }
 
-unsigned char *rotate(unsigned char **envmx2f, unsigned char *item_posf)
+static unsigned char *rotate(unsigned char **envmx2f, unsigned char *item_posf)
 {
 	unsigned char tindex=0;
 	unsigned char mat4[4][4]={0};
@@ -374,7 +374,7 @@ unsigned char *rotate(unsigned char **envmx2f, unsigned char *item_posf)
 	return item_posf;
 }
 
-void rotateMatrix(unsigned char mat[][4]) //https://www.geeksforgeeks.org/inplace-rotate-square-matrix-by-90-degrees/
+static void rotateMatrix(unsigned char mat[][4]) //https://www.geeksforgeeks.org/inplace-rotate-square-matrix-by-90-degrees/
 {
 	unsigned char x,y;
 	// Consider all squares one by one
@@ -397,7 +397,7 @@ void rotateMatrix(unsigned char mat[][4]) //https://www.geeksforgeeks.org/inplac
 	}
 }
 
-unsigned char *putdown(unsigned char **envmx2f, unsigned char *item_posf)
+static unsigned char *putdown(unsigned char **envmx2f, unsigned char *item_posf)
 {
 	while(item_posf[8]==1)
 	{
@@ -406,7 +406,7 @@ unsigned char *putdown(unsigned char **envmx2f, unsigned char *item_posf)
 	return item_posf;
 }
 
-unsigned char *movright(unsigned char **envmx2f, unsigned char *item_posf)
+static unsigned char *movright(unsigned char **envmx2f, unsigned char *item_posf)
 {
 	unsigned char tindex,xmax;
 	for(xmax=0,tindex=0; tindex<8; tindex+=2)
@@ -431,7 +431,7 @@ unsigned char *movright(unsigned char **envmx2f, unsigned char *item_posf)
 	return item_posf;
 }
 
-unsigned char *movleft(unsigned char **envmx2f, unsigned char *item_posf)
+static unsigned char *movleft(unsigned char **envmx2f, unsigned char *item_posf)
 {
 	unsigned char tindex, xmin;
 	for(xmin=_TETR_blocks_x+3,tindex=0; tindex<8; tindex+=2)
@@ -454,7 +454,7 @@ unsigned char *movleft(unsigned char **envmx2f, unsigned char *item_posf)
 	return item_posf;
 }
 
-void item_1_2(unsigned char **envmx2f, unsigned char *item_posf)
+static void item_1_2(unsigned char **envmx2f, unsigned char *item_posf)
 {
 	unsigned char tindex=0;
 	for(tindex=0; tindex<8; tindex+=2 )
@@ -463,7 +463,7 @@ void item_1_2(unsigned char **envmx2f, unsigned char *item_posf)
 	}
 }
 
-unsigned char *movdown(unsigned char **envmx2f, unsigned char *item_posf)
+static unsigned char *movdown(unsigned char **envmx2f, unsigned char *item_posf)
 {
 	if(item_posf[8]==0 || item_posf[1]==0)		{item_posf[8]=0; moving=0; item_1_2(envmx2f,item_posf); return item_posf;}//bugfix
 	unsigned char tindex=0;
@@ -492,7 +492,7 @@ unsigned char *movdown(unsigned char **envmx2f, unsigned char *item_posf)
 	return item_posf;
 }
 
-void item_pos_reset(unsigned char *item_posf, unsigned char *itemstartposf)
+static void item_pos_reset(unsigned char *item_posf, unsigned char *itemstartposf)
 {
 	unsigned char i=0;
 	for(i=0; i<9; i++)
@@ -501,7 +501,7 @@ void item_pos_reset(unsigned char *item_posf, unsigned char *itemstartposf)
 	}
 }
 
-unsigned char check_spawn(unsigned char **envmx2f, unsigned char *item_posf)
+static unsigned char check_spawn(unsigned char **envmx2f, unsigned char *item_posf)
 {//ha van valami azon a helyen ahol az elemnek 1 es értéke lenne return 1(nem lehet berakni az elemet,game over), ha nincs return 0
 	unsigned char tindex=0;
 	for(tindex=0; tindex<8; tindex+=2 )
@@ -511,7 +511,7 @@ unsigned char check_spawn(unsigned char **envmx2f, unsigned char *item_posf)
 	return 0;
 }
 
-void add(unsigned char **envmx2f,unsigned char *item_posf)
+static void add(unsigned char **envmx2f,unsigned char *item_posf)
 {
 	unsigned char tindex=0;
 	for(tindex=0; tindex<8; tindex+=2 )
@@ -520,7 +520,7 @@ void add(unsigned char **envmx2f,unsigned char *item_posf)
 	}
 }
 
-void TETR_print(unsigned char **envmx2f)
+static void TETR_print(unsigned char **envmx2f)
 {
 	fill_rectangle_x1y1_x2y2(2,2,46,125,Pixel_off);//játéktér törlése
 	fill_rectangle_x1y1_x2y2(48,121,63,127,Pixel_off);

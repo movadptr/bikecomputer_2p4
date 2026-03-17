@@ -18,7 +18,7 @@
 extern constant uint8_t _5x8chars[450];
 extern constant uint8_t _10x16chars[1800];
 
-uint8_t disp_mat[pixels_y][pixels_x/8]={0x00};
+uint8_t disp_mat[pixels_x/8][pixels_y]={0x00};
 uint16_t firstcharbyte=0;
 uint8_t charwidth=0;
 
@@ -1083,13 +1083,13 @@ void setpixel(uint8_t x, uint8_t y, uint8_t Pixel_status)
 		dotinpage=(0x01<<(x%8));
 		if(Pixel_status == Pixel_on)
 		{
-			disp_mat[y][page] |= dotinpage;
+			disp_mat[page][y] |= dotinpage;
 		}
 		else
 		{
 			if(Pixel_status == Pixel_off)
 			{
-				disp_mat[y][page] &= (~dotinpage);
+				disp_mat[page][y] &= (~dotinpage);
 			}	else{}
 		}
 	}	else{}
@@ -1102,7 +1102,7 @@ void delete_disp_mat(void)
 	{
 		for(k=0; k<pixels_y; k++)
 		{
-			disp_mat[k][j]=0;
+			disp_mat[j][k]=0;
 		}
 	}
 }
