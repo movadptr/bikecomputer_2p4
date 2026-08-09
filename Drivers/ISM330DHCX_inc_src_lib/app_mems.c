@@ -35,8 +35,9 @@ extern "C" {
 /* Private define ------------------------------------------------------------*/
 #define DWT_LAR_KEY  0xC5ACCE55 /* DWT register unlock key */
 #define ALGO_FREQ  100U /* Algorithm frequency 100Hz */
-#define ACC_ODR  ((float)ALGO_FREQ)
-#define ACC_FS  2 /* FS = <-2g, 2g> */
+#define IMU_ODR  ((float)ALGO_FREQ)
+#define ACC_FS  8//FS = <-8g, 8g>           2 /* FS = <-2g, 2g> */
+#define GYR_FS	500//FS = <-500dps, 500dps>
 #define ALGO_PERIOD  (1000000U / ALGO_FREQ) /* Algorithm period [us] */
 #define FROM_MG_TO_G  0.001f
 #define FROM_G_TO_MG  1000.0f
@@ -46,6 +47,8 @@ extern "C" {
 #define FROM_UT50_TO_MGAUSS  500.0f
 
 /* Public variables ----------------------------------------------------------*/
+
+extern void *MotionCompObj[CUSTOM_MOTION_INSTANCES_NBR];
 
 volatile uint32_t SensorsEnabled = (ACCELEROMETER_SENSOR | GYROSCOPE_SENSOR);
 char LibVersion[35];
@@ -127,12 +130,47 @@ static void MX_DynamicInclinometer_Init(void)
   */
 static void Init_Sensors(void)
 {
+  ism330dhcx_tap_cfg2_t tap_cfg2;
+  ism330dhcx_ctrl4_c_t ctrl4_c;
+  ism330dhcx_ctrl6_c_t ctrl6_c;
+  ism330dhcx_ctrl1_xl_t ctrl1_xl;
+  ism330dhcx_ctrl8_xl_t ctrl8_xl;
+
   BSP_SENSOR_ACC_Init();
   BSP_SENSOR_GYR_Init();
-  //BSP_SENSOR_TEMP_Init();
 
-  BSP_SENSOR_ACC_SetOutputDataRate(ACC_ODR);
+  while(0 != ism330dhcx_read_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_TAP_CFG2, (uint8_t *)&tap_cfg2, 1));
+  tap_cfg2.inact_en = 0U;
+  while(0 != ism330dhcx_write_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_TAP_CFG2, (uint8_t *)&tap_cfg2, 1));
+
+  BSP_SENSOR_ACC_SetOutputDataRate(IMU_ODR);
   BSP_SENSOR_ACC_SetFullScale(ACC_FS);
+
+  //enable accelerometer digital low pass filter;
+  while(0 != ism330dhcx_read_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL1_XL, (uint8_t *)&ctrl1_xl, 1));
+  ctrl1_xl.lpf2_xl_en = 1U;
+  while(0 != ism330dhcx_write_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL1_XL,  (uint8_t *)&ctrl1_xl, 1));
+
+  //setup accelerometer filter
+  while(0 != ism330dhcx_read_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL8_XL, (uint8_t *)&ctrl8_xl, 1));
+  ctrl8_xl.hp_ref_mode_xl = 0U;//disable high pass filter
+  ctrl8_xl.hp_slope_xl_en = 0U;//select slope filter
+  ctrl8_xl.fastsettl_mode_xl = 1;
+  ctrl8_xl.hpcf_xl = 7U;//select smallest bandwidth
+  while(0 != ism330dhcx_write_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL8_XL,  (uint8_t *)&ctrl8_xl, 1));
+
+  BSP_SENSOR_GYR_SetOutputDataRate(IMU_ODR);
+  BSP_SENSOR_GYR_SetFullScale(GYR_FS);
+
+  //enable gyroscope digital low pass filter;;
+  while(0 != ism330dhcx_read_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL4_C, (uint8_t *)&ctrl4_c, 1));
+  ctrl4_c.lpf1_sel_g = 1U;
+  while(0 != ism330dhcx_write_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL4_C,  (uint8_t *)&ctrl4_c, 1));
+
+  //select smallest bandwidtht
+  while(0 != ism330dhcx_read_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL6_C, (uint8_t *)&ctrl6_c, 1));
+  ctrl6_c.ftype = 7U;
+  while(0 != ism330dhcx_write_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_CTRL6_C,  (uint8_t *)&ctrl6_c, 1));
 }
 
 /**

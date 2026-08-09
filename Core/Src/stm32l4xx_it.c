@@ -113,9 +113,10 @@ void NMI_Handler(void)
 
   /* USER CODE END NonMaskableInt_IRQn 0 */
   /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
-   while (1)
-  {
-  }
+	while (1)
+	{
+	   Error_Handler();
+	}
   /* USER CODE END NonMaskableInt_IRQn 1 */
 }
 
@@ -130,6 +131,7 @@ void HardFault_Handler(void)
   while (1)
   {
     /* USER CODE BEGIN W1_HardFault_IRQn 0 */
+	Error_Handler();
     /* USER CODE END W1_HardFault_IRQn 0 */
   }
 }
@@ -145,6 +147,7 @@ void MemManage_Handler(void)
   while (1)
   {
     /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
+	Error_Handler();
     /* USER CODE END W1_MemoryManagement_IRQn 0 */
   }
 }
@@ -160,6 +163,7 @@ void BusFault_Handler(void)
   while (1)
   {
     /* USER CODE BEGIN W1_BusFault_IRQn 0 */
+	Error_Handler();
     /* USER CODE END W1_BusFault_IRQn 0 */
   }
 }
@@ -175,6 +179,7 @@ void UsageFault_Handler(void)
   while (1)
   {
     /* USER CODE BEGIN W1_UsageFault_IRQn 0 */
+	Error_Handler();
     /* USER CODE END W1_UsageFault_IRQn 0 */
   }
 }
@@ -341,13 +346,7 @@ void TIM1_BRK_TIM15_IRQHandler(void)
 	if(LL_TIM_IsActiveFlag_CC2(TIM15))
 	{
 		LL_TIM_ClearFlag_CC2(TIM15);
-		flashlight_toggle_cnt++;
-		if(flashlight_blink_val==flashlight_toggle_cnt)
-		{
-			LL_GPIO_TogglePin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
-			flashlight_toggle_cnt=0;
-		}
-		else{}
+
 	}
   /* USER CODE END TIM1_BRK_TIM15_IRQn 0 */
   /* USER CODE BEGIN TIM1_BRK_TIM15_IRQn 1 */
@@ -390,6 +389,14 @@ void TIM1_CC_IRQHandler(void)
 	if(LL_TIM_IsActiveFlag_CC1(TIM1))
 	{
 		LL_TIM_ClearFlag_CC1(TIM1);
+
+		flashlight_toggle_cnt++;
+		if(flashlight_blink_val==flashlight_toggle_cnt)
+		{
+			LL_GPIO_TogglePin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
+			flashlight_toggle_cnt=0;
+		}
+		else{}
 
 		/* DynamicInclinometer specific part */
 		MX_MEMS_Process();

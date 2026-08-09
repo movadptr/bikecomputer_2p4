@@ -18,7 +18,7 @@
   *  TIM1 - IMU
   *  TIM2 - speed, cadence
   *  TIM6 - nonblocking ms timer
-  *  TIM15 - PWM backlight
+  *  TIM15 - PWM backlight, PWM flashlight
   *  TIM16 - game
   *
   *
@@ -1323,11 +1323,6 @@ static void init(void)
 	LL_mDelay(500);								//
 	LCD_send_cmd(CMD_display_all_points_off);	//
 
-	uint8_t tmp_reg = 0;
-	ism330dhcx_read_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_TAP_CFG2, &tmp_reg, 1);
-	tmp_reg |= 0x60;//Enable activity/inactivity (sleep) function. Sets accelerometer ODR to 12.5 Hz (low-power mode), gyro to power-down mode)
-	ism330dhcx_write_reg(&((ISM330DHCX_Object_t*)MotionCompObj[CUSTOM_ISM330DHCX_0])->Ctx, ISM330DHCX_TAP_CFG2, &tmp_reg, 1);
-
 	LL_TIM_EnableCounter(TIM1);
 	LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH1);
 	LL_TIM_EnableUpdateEvent(TIM1);
@@ -1547,6 +1542,14 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+	  for(uint8_t r=0; r<10; r++)
+	  {
+		  LL_GPIO_SetOutputPin(D_LED_GPIO_Port, D_LED_Pin);
+		  for(uint32_t ri=0; ri< 10000000; ri++)	  { __NOP();}
+		  LL_GPIO_ResetOutputPin(D_LED_GPIO_Port, D_LED_Pin);
+		  for(uint32_t ri=0; ri< 10000000; ri++)	  { __NOP();}
+	  }
+	  __NVIC_SystemReset();
   }
   /* USER CODE END Error_Handler_Debug */
 }

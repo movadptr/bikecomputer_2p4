@@ -157,10 +157,8 @@ int32_t BSP_SPI1_Send(uint8_t *pData, uint16_t Length)
 {
   int32_t ret = BSP_ERROR_NONE;
 
-  if(HAL_SPI_Transmit(&hspi1, pData, Length, BUS_SPI1_POLL_TIMEOUT) != HAL_OK)
-  {
-      ret = BSP_ERROR_UNKNOWN_FAILURE;
-  }
+  ret = HAL_SPI_Transmit(&hspi1, pData, Length, BUS_SPI1_POLL_TIMEOUT); //BSP_ERROR_NONE and HAL_OK is the same
+
   return ret;
 }
 
@@ -174,10 +172,8 @@ int32_t  BSP_SPI1_Recv(uint8_t *pData, uint16_t Length)
 {
   int32_t ret = BSP_ERROR_NONE;
 
-  if(HAL_SPI_Receive(&hspi1, pData, Length, BUS_SPI1_POLL_TIMEOUT) != HAL_OK)
-  {
-      ret = BSP_ERROR_UNKNOWN_FAILURE;
-  }
+  ret = HAL_SPI_Receive(&hspi1, pData, Length, BUS_SPI1_POLL_TIMEOUT); //BSP_ERROR_NONE and HAL_OK is the same
+
   return ret;
 }
 
