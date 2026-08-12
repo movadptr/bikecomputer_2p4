@@ -86,19 +86,17 @@ void settings(void)
 						else								{ write_text_V(2, 92, "Blink off", Pixel_on, size_5x8);}
 						write_text_V(2, 82, "BFr",Pixel_on, size_5x8);
 						write_text_V(50, 82, "Hz",Pixel_on, size_5x8);
-						write_dec_num_float_V(36, 82, (1/(TIM15_period*2*tmp)), 2, Pixel_on, size_5x8);
+						write_text_V(2, 72, "Bright:",Pixel_on, size_5x8);
+						write_dec_num_float_V(36, 82, (1/(TIM1_period*2*tmp)), 2, Pixel_on, size_5x8);
+						write_dec_num_int16_t_V(39, 72, (int16_t)Read_M95010_W_EEPROM(EE_PWM_duty_flashlight), Pixel_on, size_5x8, ALIGN_LEFT);
 						draw_rectangle_xy_height_width( 0, 100, 11, 64, Pixel_on);
 						print_disp_mat();
 
 						for(menu_row_layer_1 = 10;;)
 						{
-							menu_row_layer_1 = choose_row(2, menu_row_layer_1);
+							menu_row_layer_1 = choose_row(3, menu_row_layer_1);
 							if(btn == exitgomb)
 							{
-								if(Read_M95010_W_EEPROM(EE_flashlight_blink) != tmp)
-								{
-									Write_M95010_W_EEPROM(EE_flashlight_blink, tmp);
-								}
 								break;
 							}
 							else{btn=0;}
@@ -110,7 +108,8 @@ void settings(void)
 												system_bits &= ~flashlight_EN;
 												fill_rectangle_xy_height_width(2, 102, 7, 50, Pixel_off);
 												write_text_V(2, 102, "Light off", Pixel_on, size_5x8);
-												LL_GPIO_ResetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
+												LL_TIM_CC_DisableChannel(TIM15, LL_TIM_CHANNEL_CH2);
+												LL_TIM_OC_SetMode(TIM15, LL_TIM_CHANNEL_CH2, LL_TIM_OCMODE_FORCED_INACTIVE);
 												print_disp_mat();
 												tim_delay_ms(menu_delaytime_fast);
 											}
@@ -119,7 +118,8 @@ void settings(void)
 												system_bits |= flashlight_EN;
 												fill_rectangle_xy_height_width(2, 102, 7, 50, Pixel_off);
 												write_text_V(2, 102, "Light on", Pixel_on, size_5x8);
-												LL_GPIO_SetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
+												LL_TIM_OC_SetMode(TIM15, LL_TIM_CHANNEL_CH2, LL_TIM_OCMODE_PWM1);
+												LL_TIM_CC_EnableChannel(TIM15, LL_TIM_CHANNEL_CH2);
 												print_disp_mat();
 												tim_delay_ms(menu_delaytime_fast);
 											}
@@ -131,17 +131,15 @@ void settings(void)
 												system_bits &= ~flashlight_blink;
 												fill_rectangle_xy_height_width(2, 92, 7, 45, Pixel_off);
 												write_text_V(2, 92, "Blink off", Pixel_on, size_5x8);
-												LL_TIM_CC_DisableChannel(TIM15, LL_TIM_CHANNEL_CH2);
-												LL_TIM_DisableIT_CC2(TIM15);
 												print_disp_mat();
 												if(system_bits & flashlight_EN)//ne maradjon esetlegesen kikapcsolva ha amúgy az enable megvan
 												{
-													LL_GPIO_SetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
+													if(LL_TIM_OC_GetMode(TIM15, LL_TIM_CHANNEL_CH2) == LL_TIM_OCMODE_FORCED_INACTIVE)
+													{
+														LL_TIM_OC_SetMode(TIM15, LL_TIM_CHANNEL_CH2, LL_TIM_OCMODE_PWM1);
+													}
 												}
 												else
-												{
-													LL_GPIO_ResetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
-												}
 												tim_delay_ms(menu_delaytime_fast);
 											}
 											else
@@ -149,20 +147,19 @@ void settings(void)
 												system_bits |= flashlight_blink;
 												fill_rectangle_xy_height_width(2, 92, 7, 45, Pixel_off);
 												write_text_V(2, 92, "Blink on", Pixel_on, size_5x8);
-												LL_TIM_CC_EnableChannel(TIM15, LL_TIM_CHANNEL_CH2);
-												LL_TIM_EnableIT_CC2(TIM15);
 												print_disp_mat();
 												tim_delay_ms(menu_delaytime_fast);
 											}
 											break;
 
-								case 8:	while(1)
+								case 8:	tmp = Read_M95010_W_EEPROM(EE_flashlight_blink);
+										while(1)
 										{
 											if( (btn == balgomb) && (tmp < 100) )
 											{
 												fill_rectangle_xy_height_width(20, 82, 7, 30, Pixel_off);
 												tmp++;
-												write_dec_num_float_V(36, 82, (1/(TIM15_period*2*tmp)), 2, Pixel_on, size_5x8);
+												write_dec_num_float_V(36, 82, (1/(TIM1_period*2*tmp)), 2, Pixel_on, size_5x8);
 												print_disp_mat();
 												tim_delay_ms(menu_delaytime_fast);
 											}	else{}
@@ -170,12 +167,25 @@ void settings(void)
 											{
 												fill_rectangle_xy_height_width(20, 82, 7, 30, Pixel_off);
 												tmp--;
-												write_dec_num_float_V(36, 82, (1/(TIM15_period*2*tmp)), 2, Pixel_on, size_5x8);
+												write_dec_num_float_V(36, 82, (1/(TIM1_period*2*tmp)), 2, Pixel_on, size_5x8);
 												print_disp_mat();
 												tim_delay_ms(menu_delaytime_fast);
 											}	else{}
 											if(btn == entergomb)	{ flashlight_blink_val = tmp; break;}	else{} //értéket elfogad
 										}
+										if(Read_M95010_W_EEPROM(EE_flashlight_blink) != tmp)
+										{
+											Write_M95010_W_EEPROM(EE_flashlight_blink, tmp);
+										}
+										break;
+								case 7://flashlight PWM value
+										tmp=Read_M95010_W_EEPROM(EE_PWM_duty_flashlight);
+										tmp = numPickerUInt32_printInPlace_V(0, 255, tmp, &btn, 39, 72);
+										if(tmp != LL_TIM_OC_GetCompareCH2(TIM15))//ne í­rjuk fölöslegesen az eepromot
+										{
+											Write_M95010_W_EEPROM(EE_PWM_duty_flashlight, tmp);
+											LL_TIM_OC_SetCompareCH2(TIM15,tmp);
+										}else{}
 										break;
 							}
 						}
@@ -480,11 +490,13 @@ void settings(void)
 											saved_bits &= ~backlight_EN;
 											write_text_V(39, 92, "OFF", Pixel_on, size_5x8);
 											LL_TIM_CC_DisableChannel(TIM15, LL_TIM_CHANNEL_CH1);
+											LL_TIM_OC_SetMode(TIM15, LL_TIM_CHANNEL_CH1, LL_TIM_OCMODE_FORCED_INACTIVE);
 										}
 										else
 										{
 											saved_bits |= backlight_EN;
 											write_text_V(39, 92, "ON", Pixel_on,size_5x8);
+											LL_TIM_OC_SetMode(TIM15, LL_TIM_CHANNEL_CH1, LL_TIM_OCMODE_PWM1);
 											LL_TIM_CC_EnableChannel(TIM15, LL_TIM_CHANNEL_CH1);
 										}
 										Write_M95010_W_EEPROM(EE_bitek, saved_bits);
@@ -672,9 +684,11 @@ void settings(void)
 			case 2:		break;
 			*/
 
-			case 1:		EEPROM_editor();
+			case 1:		;
+#ifndef DEBUG//hogy lehessen debuggolni a fő applikációt. E nélkül túl nagy a kódméret debug módban
+						EEPROM_editor();
+#endif
 						break;
-
 			//games submenu
 			case 0:		;
 #ifndef DEBUG//hogy lehessen debuggolni a fő applikációt. E nélkül túl nagy a kódméret debug módban

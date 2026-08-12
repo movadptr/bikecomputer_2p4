@@ -338,23 +338,6 @@ void EXTI9_5_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles TIM1 break interrupt and TIM15 global interrupt.
-  */
-void TIM1_BRK_TIM15_IRQHandler(void)
-{
-  /* USER CODE BEGIN TIM1_BRK_TIM15_IRQn 0 */
-	if(LL_TIM_IsActiveFlag_CC2(TIM15))
-	{
-		LL_TIM_ClearFlag_CC2(TIM15);
-
-	}
-  /* USER CODE END TIM1_BRK_TIM15_IRQn 0 */
-  /* USER CODE BEGIN TIM1_BRK_TIM15_IRQn 1 */
-
-  /* USER CODE END TIM1_BRK_TIM15_IRQn 1 */
-}
-
-/**
   * @brief This function handles TIM1 update interrupt and TIM16 global interrupt.
   */
 void TIM1_UP_TIM16_IRQHandler(void)
@@ -390,13 +373,23 @@ void TIM1_CC_IRQHandler(void)
 	{
 		LL_TIM_ClearFlag_CC1(TIM1);
 
-		flashlight_toggle_cnt++;
-		if(flashlight_blink_val==flashlight_toggle_cnt)
+		if(system_bits & flashlight_blink)
 		{
-			LL_GPIO_TogglePin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
-			flashlight_toggle_cnt=0;
+			flashlight_toggle_cnt++;
+			if(flashlight_blink_val==flashlight_toggle_cnt)
+			{
+				if(LL_TIM_OC_GetMode(TIM15, LL_TIM_CHANNEL_CH2) == LL_TIM_OCMODE_PWM1)
+				{
+					LL_TIM_OC_SetMode(TIM15, LL_TIM_CHANNEL_CH2, LL_TIM_OCMODE_FORCED_INACTIVE);
+				}
+				else if(LL_TIM_OC_GetMode(TIM15, LL_TIM_CHANNEL_CH2) == LL_TIM_OCMODE_FORCED_INACTIVE)
+				{
+					LL_TIM_OC_SetMode(TIM15, LL_TIM_CHANNEL_CH2, LL_TIM_OCMODE_PWM1);
+				}
+				flashlight_toggle_cnt=0;
+			}
+			else{}
 		}
-		else{}
 
 		/* DynamicInclinometer specific part */
 		MX_MEMS_Process();

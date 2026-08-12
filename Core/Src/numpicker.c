@@ -133,6 +133,7 @@ uint32_t numPickerUInt32_printInPlace_V(uint32_t Llimit, uint32_t Hlimit, uint32
 	for(uint8_t tmpIDigits=0; tmpIDigits < numOfDigits; tmpIDigits++)
 	{
 		digitXPosT[tmpIDigits] = ((xpos+((numOfDigits-1)*digitSelWidth))-(tmpIDigits*digitSelWidth));//calculate and save digit x positions, centered horizontally
+		fill_rectangle_xy_height_width(digitXPosT[tmpIDigits]-1, ypos-1, 9, 7, Pixel_off);//clear pixels at digit pos
 		write_character_V(digitXPosT[tmpIDigits], ypos, numt[tmpIDigits]+'0', Pixel_on, size_5x8);//at the seme time print the digits
 	}
 

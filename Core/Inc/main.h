@@ -176,14 +176,14 @@ void Tgame_main_isr();
 #define ACC_INT_GPIO_Port GPIOB
 #define EEPROM_CS_Pin LL_GPIO_PIN_10
 #define EEPROM_CS_GPIO_Port GPIOB
-#define FLASHLIGHT_Pin LL_GPIO_PIN_11
-#define FLASHLIGHT_GPIO_Port GPIOB
 #define BTN_EXIT_Pin LL_GPIO_PIN_12
 #define BTN_EXIT_GPIO_Port GPIOB
 #define BTN_EXIT_EXTI_IRQn EXTI15_10_IRQn
 #define BTN_BAL_SYS_WKUP2_Pin LL_GPIO_PIN_13
 #define BTN_BAL_SYS_WKUP2_GPIO_Port GPIOB
 #define BTN_BAL_SYS_WKUP2_EXTI_IRQn EXTI15_10_IRQn
+#define FLASHLIGHT_PWM_Pin LL_GPIO_PIN_15
+#define FLASHLIGHT_PWM_GPIO_Port GPIOB
 #define BTN_JOBB_Pin LL_GPIO_PIN_8
 #define BTN_JOBB_GPIO_Port GPIOA
 #define BTN_JOBB_EXTI_IRQn EXTI9_5_IRQn
@@ -217,8 +217,10 @@ void Tgame_main_isr();
 
 #define timtick			25e-9F	// 24Mhz/előosztó
 #define timAR			80000000UL//a timer counter hossza
+
 #define temperature_calib_val	0.0F//-1.0F
-#define TIM15_period		5e-3F//5ms timer 15 period
+
+#define TIM1_period		10e-3F//10ms timer 1 period
 
 ///////EEPROM addresses/////////////////////////////////
 #define EE_PWM_duty_backlight		0x0001
@@ -244,6 +246,7 @@ void Tgame_main_isr();
 
 #define EE_contrast					0x0013
 #define EE_flashlight_blink			0x0014
+#define EE_PWM_duty_flashlight		0x0015
 ////////////////////////////////////////////////////////
 
 //bit masks for saved bits

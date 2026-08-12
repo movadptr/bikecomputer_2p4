@@ -168,9 +168,9 @@ int main(void)
 
 		while(btn == 0x00)//amíg nem nyomok semmit itt ciklik
 		{
-			NVIC_DisableIRQ(SysTick_IRQn);
-			HAL_PWR_EnterSLEEPMode(PWR_LOWPOWERREGULATOR_ON, PWR_SLEEPENTRY_WFI);
-			NVIC_EnableIRQ(SysTick_IRQn);
+			//NVIC_DisableIRQ(SysTick_IRQn);
+			HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+			//NVIC_EnableIRQ(SysTick_IRQn);
 		}
 
 		if(btn == jobbgomb)
@@ -273,7 +273,7 @@ int main(void)
 						{
 							if(d==10)
 							{
-								tim_delay_ms(150);//késleltetés hogy az utolsó kirajzolt csíkrészlet is látható legyen
+								tim_delay_ms(100);//késleltetés hogy az utolsó kirajzolt csíkrészlet is látható legyen
 								pwr_down();
 							} else{}
 							draw_line_x(1, 1+((d+1)*6), 60, Pixel_on);//futó csík
@@ -303,11 +303,9 @@ int main(void)
 static void TIM1_Init(void)
 {
 	//TIM1 interrupt Init
-	NVIC_SetPriority(TIM1_BRK_TIM15_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
-	NVIC_EnableIRQ(TIM1_BRK_TIM15_IRQn);
 	NVIC_SetPriority(TIM1_UP_TIM16_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
 	NVIC_EnableIRQ(TIM1_UP_TIM16_IRQn);
-	NVIC_SetPriority(TIM1_CC_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+	NVIC_SetPriority(TIM1_CC_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),1, 0));
 	NVIC_EnableIRQ(TIM1_CC_IRQn);
 
 	{
@@ -661,9 +659,6 @@ static void MX_TIM15_Init(void)
 
   LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-  NVIC_SetPriority(TIM1_BRK_TIM15_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
-  NVIC_EnableIRQ(TIM1_BRK_TIM15_IRQn);
-
   //1562 presc and 256 arr gives ~100Hz
   TIM_InitStruct.Prescaler = 781;
   TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
@@ -672,6 +667,7 @@ static void MX_TIM15_Init(void)
   TIM_InitStruct.RepetitionCounter = 0;
   LL_TIM_Init(TIM15, &TIM_InitStruct);
   LL_TIM_DisableARRPreload(TIM15);
+
   LL_TIM_OC_EnablePreload(TIM15, LL_TIM_CHANNEL_CH1);
   TIM_OC_InitStruct.OCMode = LL_TIM_OCMODE_PWM1;
   TIM_OC_InitStruct.OCState = LL_TIM_OCSTATE_ENABLE;
@@ -684,8 +680,15 @@ static void MX_TIM15_Init(void)
   LL_TIM_OC_Init(TIM15, LL_TIM_CHANNEL_CH1, &TIM_OC_InitStruct);
   LL_TIM_OC_DisableFast(TIM15, LL_TIM_CHANNEL_CH1);
 
-  TIM_OC_InitStruct.OCMode = LL_TIM_OCMODE_FROZEN;
-  TIM_OC_InitStruct.CompareValue = 0;
+  LL_TIM_OC_EnablePreload(TIM15, LL_TIM_CHANNEL_CH2);
+  TIM_OC_InitStruct.OCMode = LL_TIM_OCMODE_PWM1;
+  TIM_OC_InitStruct.OCState = LL_TIM_OCSTATE_ENABLE;
+  TIM_OC_InitStruct.OCNState = LL_TIM_OCSTATE_DISABLE;
+  TIM_OC_InitStruct.CompareValue = 250;
+  TIM_OC_InitStruct.OCPolarity = LL_TIM_OCPOLARITY_HIGH;
+  TIM_OC_InitStruct.OCNPolarity = LL_TIM_OCPOLARITY_HIGH;
+  TIM_OC_InitStruct.OCIdleState = LL_TIM_OCIDLESTATE_LOW;
+  TIM_OC_InitStruct.OCNIdleState = LL_TIM_OCIDLESTATE_LOW;
   LL_TIM_OC_Init(TIM15, LL_TIM_CHANNEL_CH2, &TIM_OC_InitStruct);
   LL_TIM_OC_DisableFast(TIM15, LL_TIM_CHANNEL_CH2);
 
@@ -700,9 +703,9 @@ static void MX_TIM15_Init(void)
   TIM_BDTRInitStruct.AutomaticOutput = LL_TIM_AUTOMATICOUTPUT_ENABLE;
   LL_TIM_BDTR_Init(TIM15, &TIM_BDTRInitStruct);
 
-
   /**TIM15 GPIO Configuration
   PA2   ------> TIM15_CH1
+  PB15   ------> TIM15_CH2
   */
   GPIO_InitStruct.Pin = BACKLIGHT_PWM_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
@@ -711,6 +714,14 @@ static void MX_TIM15_Init(void)
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   GPIO_InitStruct.Alternate = LL_GPIO_AF_14;
   LL_GPIO_Init(BACKLIGHT_PWM_GPIO_Port, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = FLASHLIGHT_PWM_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
+  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  GPIO_InitStruct.Alternate = LL_GPIO_AF_14;
+  LL_GPIO_Init(FLASHLIGHT_PWM_GPIO_Port, &GPIO_InitStruct);
 
   LL_TIM_EnableCounter(TIM15);
   LL_TIM_CC_DisableChannel(TIM15, LL_TIM_CHANNEL_CH1);//not to light up backlight even if setting is off
@@ -784,13 +795,12 @@ static void GPIO_Init(void)
 	LL_GPIO_SetOutputPin(GPIOA, LCD_CS_Pin|LCD_RES_Pin);
 	LL_GPIO_SetOutputPin(GPIOB, ACC_CS_Pin|EEPROM_CS_Pin);
 	LL_GPIO_ResetOutputPin(LCD_DC_GPIO_Port, LCD_DC_Pin);
-	LL_GPIO_ResetOutputPin(GPIOB, FLASHLIGHT_Pin|D_LED_Pin);
+	LL_GPIO_ResetOutputPin(GPIOB, D_LED_Pin);
 
 	setPinToGenericOutput(LCD_CS_GPIO_Port, LCD_CS_Pin);
 	setPinToGenericOutput(LCD_RES_GPIO_Port, LCD_RES_Pin);
 	setPinToGenericOutput(LCD_DC_GPIO_Port, LCD_DC_Pin);
 	setPinToGenericOutput(ACC_CS_GPIO_Port, ACC_CS_Pin);
-	setPinToGenericOutput(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
 	setPinToGenericOutput(D_LED_GPIO_Port, D_LED_Pin);
 	setPinToGenericOutput(EEPROM_CS_GPIO_Port, EEPROM_CS_Pin);
 
@@ -973,7 +983,9 @@ void pwr_down(void)
 	EXTI->PR1 = 0x007DFFFF;//clear pending interrupts
 	EXTI->PR2 = 0x00000078;//clear pending interrupts
 
-	LL_GPIO_ResetOutputPin(FLASHLIGHT_GPIO_Port, FLASHLIGHT_Pin);
+	//make sure light pwm-s won't stay high
+	LL_TIM_OC_SetMode(TIM15, LL_TIM_CHANNEL_CH1, LL_TIM_OCMODE_FORCED_INACTIVE);
+	LL_TIM_OC_SetMode(TIM15, LL_TIM_CHANNEL_CH2, LL_TIM_OCMODE_FORCED_INACTIVE);
 
 	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_B, ACC_CS_Pin);
 	HAL_PWREx_EnableGPIOPullUp(PWR_GPIO_B, EEPROM_CS_Pin);
@@ -1316,7 +1328,9 @@ static void init(void)
 		if(tmp & (~((1<<BP0) | (1<<BP1))))	{ Write_SREG_M95010_W_EEPROM( tmp & (~((1<<BP0) | (1<<BP1))) );}	else{}
 	}
 	saved_bits = Read_M95010_W_EEPROM(EE_bitek);
-	flashlight_blink_val = Read_M95010_W_EEPROM(EE_flashlight_blink);
+	flashlight_blink_val = Read_M95010_W_EEPROM(EE_flashlight_blink);//val to compute blink freq
+
+	LL_TIM_OC_SetCompareCH2(TIM15, Read_M95010_W_EEPROM(EE_PWM_duty_flashlight) );
 
 	LCD_init(Read_M95010_W_EEPROM(EE_contrast));//15
 	LCD_send_cmd(CMD_display_all_points_on);	//LCD test, meg amúgy is felvillan egy kicsit induláskor, és az nem néz ki túl jól
