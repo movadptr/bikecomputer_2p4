@@ -213,6 +213,9 @@ void Tgame_main_isr();
 #define tyre_700x25C				2.11115F	//kerék kerülete méterben
 #define tyre_id_700x25C				0x02U
 
+#define tyre_700x38C				2.20539F	//kerék kerülete méterben //ETRTO 40-622
+#define tyre_id_700x38C				0x03U
+
 #define tyre_id_custom_perimeter	0x05U
 
 #define timtick			25e-9F	// 24Mhz/előosztó

@@ -24,10 +24,15 @@ uint8_t numPickerHex_printInPlace_V(uint8_t Llimit, uint8_t Hlimit, uint8_t star
 	uint8_t numt[2]={0};
 	disassembleHexNum(numt, startval);
 
+	fill_rectangle_xy_height_width(digitXPosT[0]-1, ypos-1, 9, 7, Pixel_off);//delete prev num
+	fill_rectangle_xy_height_width(digitXPosT[1]-1, ypos-1, 9, 7, Pixel_off);//delete prev num
+
 	fill_rectangle_xy_height_width(digitXPosT[0]-1, ypos-1, 9, 7, Pixel_on);//initial cursor pos
 	//print initial value
-	if(numt[0]>9)	{ write_character_V(digitXPosT[0], ypos, numt[0]+('A'-10), Pixel_off, size_5x8);	}
+	if(numt[0]>9)	{ write_character_V(digitXPosT[0], ypos, numt[0]+('A'-10), Pixel_off, size_5x8);}
 	else			{ write_character_V(digitXPosT[0], ypos, numt[0]+'0', Pixel_off, size_5x8);}
+	if(numt[1]>9)	{ write_character_V(digitXPosT[1], ypos, numt[1]+('A'-10), Pixel_on, size_5x8);}
+	else			{ write_character_V(digitXPosT[1], ypos, numt[1]+'0', Pixel_on, size_5x8);}
 	print_disp_mat();
 
 	uint8_t iDigits = 0;//index

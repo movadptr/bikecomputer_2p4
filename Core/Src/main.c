@@ -949,11 +949,19 @@ void pwr_down(void)
 	if(system_bits & moving_time_recording_EN_1)	{ system_bits &= ~(moving_time_recording_EN_1 | moving_time_recording_EN_2);}	else{}//mérés leállí­tása, ha nem lett volna leállí­tva
 
 	//save total distance in EEPROM
-	uint32_t tmpd = alldata.totdist;
-	Write_M95010_W_EEPROM(EE_totdist_0, (uint8_t)( tmpd & 0x000000ff) );
-	Write_M95010_W_EEPROM(EE_totdist_1, (uint8_t)((tmpd & 0x0000ff00)>>8) );
-	Write_M95010_W_EEPROM(EE_totdist_2, (uint8_t)((tmpd & 0x00ff0000)>>16) );
-	Write_M95010_W_EEPROM(EE_totdist_3, (uint8_t)((tmpd & 0xff000000)>>24) );
+	uint32_t tmpd = 0;
+	tmpd = (uint32_t)(Read_M95010_W_EEPROM(EE_totdist_0) |
+					 (Read_M95010_W_EEPROM(EE_totdist_1)<<8) |
+					 (Read_M95010_W_EEPROM(EE_totdist_2)<<16) |
+					 (Read_M95010_W_EEPROM(EE_totdist_3)<<24) );
+	if(tmpd != alldata.totdist)
+	{
+		tmpd = alldata.totdist;
+		Write_M95010_W_EEPROM(EE_totdist_0, (uint8_t)( tmpd & 0x000000ff) );
+		Write_M95010_W_EEPROM(EE_totdist_1, (uint8_t)((tmpd & 0x0000ff00)>>8) );
+		Write_M95010_W_EEPROM(EE_totdist_2, (uint8_t)((tmpd & 0x00ff0000)>>16) );
+		Write_M95010_W_EEPROM(EE_totdist_3, (uint8_t)((tmpd & 0xff000000)>>24) );
+	}
 
 	LL_mDelay(200);//várunk hogy a gomb esetleges pergése, vagy rosszkori elengedése miatt megjövő interrupt ne rontsa el a sleepet
 
@@ -1363,7 +1371,8 @@ static void init(void)
 									break;
 			case tyre_id_700x25C: 	curr_tyre = tyre_700x25C;
 									break;
-			//case tyre_id_ :	break;
+			case tyre_id_700x38C :	curr_tyre = tyre_700x38C;
+									break;
 			//case tyre_id_ :	break;
 			case tyre_id_custom_perimeter:
 									curr_tyre = (float) (((uint16_t)( Read_M95010_W_EEPROM(EE_custom_tyre_perimeter_L) | (Read_M95010_W_EEPROM(EE_custom_tyre_perimeter_H)<<8) )) /(float)1000 );

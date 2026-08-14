@@ -347,15 +347,17 @@ void settings(void)
 
 						volatile uint8_t tmp2=0;
 						volatile int16_t tmp3=0;
-						write_text_V(2, 102, "700 x 23", Pixel_on, size_5x8);
-						write_text_V(2, 92, "700 x 25", Pixel_on, size_5x8);
-						write_text_V(2, 82, "Perimeter", Pixel_on, size_5x8);
-						write_text_V(2, 72, "ETRTO", Pixel_on, size_5x8);
+						write_text_V(2, 102, "ETRTO", Pixel_on, size_5x8);
+						write_text_V(2, 92, "Perimeter", Pixel_on, size_5x8);
+						write_text_V(2, 82, "700 x 23", Pixel_on, size_5x8);
+						write_text_V(2, 72, "700 x 25", Pixel_on, size_5x8);
+						write_text_V(2, 62, "700 x 38", Pixel_on, size_5x8);
 						switch(Read_M95010_W_EEPROM(EE_curr_tyre_id))//show current setting
 						{
-							case  tyre_id_700x23C:			write_character_V(58, 102, '<', Pixel_on, size_5x8); 	break;
-							case  tyre_id_700x25C:			write_character_V(58, 92, '<', Pixel_on, size_5x8); 	break;
-							case  tyre_id_custom_perimeter:	write_character_V(58, 82, '<', Pixel_on, size_5x8); 	break;
+							case  tyre_id_custom_perimeter:	write_character_V(58, 92, '<', Pixel_on, size_5x8); 	break;
+							case  tyre_id_700x23C:			write_character_V(58, 82, '<', Pixel_on, size_5x8); 	break;
+							case  tyre_id_700x25C:			write_character_V(58, 72, '<', Pixel_on, size_5x8); 	break;
+							case  tyre_id_700x38C:			write_character_V(58, 62, '<', Pixel_on, size_5x8); 	break;
 							//there is no ETRTO line here because that also saves to custom perimeter
 							default: break;
 						}
@@ -363,7 +365,7 @@ void settings(void)
 						print_disp_mat();
 
 						menu_row_layer_1 = 10;
-						menu_row_layer_1 = choose_row(3, menu_row_layer_1);
+						menu_row_layer_1 = choose_row(4, menu_row_layer_1);
 						if(btn == exitgomb)
 						{
 							break;
@@ -372,34 +374,7 @@ void settings(void)
 
 						switch(menu_row_layer_1)
 						{
-							case 10:	alldata.totdist=get_dist_for_new_tyre(curr_tyre, tyre_700x23C, alldata.totdist);
-										alldata.dist=get_dist_for_new_tyre(curr_tyre, tyre_700x23C, alldata.dist);
-										curr_tyre=tyre_700x23C;
-										Write_M95010_W_EEPROM(EE_curr_tyre_id, tyre_id_700x23C);
-										break;
-
-							case 9:		alldata.totdist=get_dist_for_new_tyre(curr_tyre, tyre_700x25C, alldata.totdist);
-										alldata.dist=get_dist_for_new_tyre(curr_tyre, tyre_700x25C, alldata.dist);
-										curr_tyre=tyre_700x25C;
-										Write_M95010_W_EEPROM(EE_curr_tyre_id, tyre_id_700x25C);
-										break;
-
-							case 8:		//circumference in mm
-										tmp3 = ((int16_t)( Read_M95010_W_EEPROM(EE_custom_tyre_perimeter_L) | (Read_M95010_W_EEPROM(EE_custom_tyre_perimeter_H)<<8) ));
-										delete_disp_mat();
-										write_text_V(52, 80, "mm", Pixel_on, size_5x8);
-										//print_disp_mat();//not necesarry numpicker has a print too in the beg of the fn
-										tmp3 = numPickerUInt32_printInPlace_V(1, 5000, tmp3, &btn, 23, 80);
-										Write_M95010_W_EEPROM(EE_curr_tyre_id, tyre_id_custom_perimeter);
-										Write_M95010_W_EEPROM(EE_custom_tyre_perimeter_H, (((uint16_t)tmp3 & 0xff00)>>8) );
-										Write_M95010_W_EEPROM(EE_custom_tyre_perimeter_L, ((uint16_t)tmp3 & 0x00ff) );
-										float tmp4 = ((float)tmp3/1000);//itt már méter a mértékegység
-										alldata.totdist=get_dist_for_new_tyre(curr_tyre, tmp4, alldata.totdist);
-										alldata.dist=get_dist_for_new_tyre(curr_tyre, tmp4, alldata.dist);
-										curr_tyre = tmp4;
-										break;
-
-							case 7:		//ETRTO értékkel való kerület megadás
+							case 10:	//ETRTO értékkel való kerület megadás
 										delete_disp_mat();
 										tmp2=23;
 										tmp3=622;
@@ -438,6 +413,48 @@ void settings(void)
 														tmp3 = numPickerUInt32_printInPlace_V(1, 999, tmp3, &btn, 42, 92);
 														break;
 											}
+										}
+										break;
+
+							case 9:		//circumference in mm
+										tmp3 = ((int16_t)( Read_M95010_W_EEPROM(EE_custom_tyre_perimeter_L) | (Read_M95010_W_EEPROM(EE_custom_tyre_perimeter_H)<<8) ));
+										delete_disp_mat();
+										write_text_V(52, 80, "mm", Pixel_on, size_5x8);
+										//print_disp_mat();//not necesarry numpicker has a print too in the beg of the fn
+										tmp3 = numPickerUInt32_printInPlace_V(1, 5000, tmp3, &btn, 23, 80);
+										Write_M95010_W_EEPROM(EE_curr_tyre_id, tyre_id_custom_perimeter);
+										Write_M95010_W_EEPROM(EE_custom_tyre_perimeter_H, (((uint16_t)tmp3 & 0xff00)>>8) );
+										Write_M95010_W_EEPROM(EE_custom_tyre_perimeter_L, ((uint16_t)tmp3 & 0x00ff) );
+										float tmp4 = ((float)tmp3/1000);//itt már méter a mértékegység
+										alldata.totdist=get_dist_for_new_tyre(curr_tyre, tmp4, alldata.totdist);
+										alldata.dist=get_dist_for_new_tyre(curr_tyre, tmp4, alldata.dist);
+										curr_tyre = tmp4;
+										break;
+
+							case 8:		if(curr_tyre != tyre_700x23C)
+										{
+											alldata.totdist=get_dist_for_new_tyre(curr_tyre, tyre_700x23C, alldata.totdist);
+											alldata.dist=get_dist_for_new_tyre(curr_tyre, tyre_700x23C, alldata.dist);
+											curr_tyre=tyre_700x23C;
+											Write_M95010_W_EEPROM(EE_curr_tyre_id, tyre_id_700x23C);
+										}
+										break;
+
+							case 7:		if(curr_tyre != tyre_700x25C)
+										{
+											alldata.totdist=get_dist_for_new_tyre(curr_tyre, tyre_700x25C, alldata.totdist);
+											alldata.dist=get_dist_for_new_tyre(curr_tyre, tyre_700x25C, alldata.dist);
+											curr_tyre=tyre_700x25C;
+											Write_M95010_W_EEPROM(EE_curr_tyre_id, tyre_id_700x25C);
+										}
+										break;
+
+							case 6:		if(curr_tyre != tyre_700x38C)
+										{
+											alldata.totdist=get_dist_for_new_tyre(curr_tyre, tyre_700x38C, alldata.totdist);
+											alldata.dist=get_dist_for_new_tyre(curr_tyre, tyre_700x38C, alldata.dist);
+											curr_tyre=tyre_700x38C;
+											Write_M95010_W_EEPROM(EE_curr_tyre_id, tyre_id_700x38C);
 										}
 										break;
 						}
@@ -543,23 +560,38 @@ void settings(void)
 			//total distance
 			case 5:	{
 						write_text_V(0, 120, "Total_dist", Pixel_on, size_5x8);
-						write_text_V(2, 82, "ClrTotDist", Pixel_on, size_5x8);
-						write_text_V(52, 62, "km", Pixel_on, size_5x8);
+						write_text_V(2, 92, "SaveTotDist", Pixel_on, size_5x8);
+						write_text_V(2, 82, "ReadTotDist", Pixel_on, size_5x8);
+						write_text_V(2, 72, "ClrTotDist", Pixel_on, size_5x8);
+						write_text_V(52, 52, "km", Pixel_on, size_5x8);
 						draw_rectangle_xy_height_width( 0, 100, 11, 64, Pixel_on);
 
 						for(menu_row_layer_1=10;;)
 						{
-							fill_rectangle_xy_height_width(0, 62, 7, 50, Pixel_off);
+							fill_rectangle_xy_height_width(0, 52, 7, 50, Pixel_off);
 							uint32_t tmpd = (uint32_t)((alldata.totdist*curr_tyre)/1000);
-							write_dec_num_uint32_t_V(50, 62, tmpd, Pixel_on, size_5x8, ALIGN_RIGHT);//km a mértékegység
+							write_dec_num_uint32_t_V(50, 52, tmpd, Pixel_on, size_5x8, ALIGN_RIGHT);//km a mértékegység
 							print_disp_mat();
 
-							menu_row_layer_1 = choose_row(2, menu_row_layer_1);
+							menu_row_layer_1 = choose_row(3, menu_row_layer_1);
 							if(btn == exitgomb)	{ break;} else{btn=0;}
 
 							switch(menu_row_layer_1)
 							{
-								case 8:		Write_M95010_W_EEPROM(EE_totdist_0, 0U);
+								//save
+								case 9:		Write_M95010_W_EEPROM(EE_totdist_0, (uint8_t)( tmpd & 0x000000ff) );
+											Write_M95010_W_EEPROM(EE_totdist_1, (uint8_t)((tmpd & 0x0000ff00)>>8) );
+											Write_M95010_W_EEPROM(EE_totdist_2, (uint8_t)((tmpd & 0x00ff0000)>>16) );
+											Write_M95010_W_EEPROM(EE_totdist_3, (uint8_t)((tmpd & 0xff000000)>>24) );
+											break;
+								//read
+								case 8:		alldata.totdist = (uint32_t)(Read_M95010_W_EEPROM(EE_totdist_0) |
+										 	(Read_M95010_W_EEPROM(EE_totdist_1)<<8) |
+											(Read_M95010_W_EEPROM(EE_totdist_2)<<16) |
+											(Read_M95010_W_EEPROM(EE_totdist_3)<<24) );
+											break;
+								//clear
+								case 7:		Write_M95010_W_EEPROM(EE_totdist_0, 0U);
 											Write_M95010_W_EEPROM(EE_totdist_1, 0U);
 											Write_M95010_W_EEPROM(EE_totdist_2, 0U);
 											Write_M95010_W_EEPROM(EE_totdist_3, 0U);
